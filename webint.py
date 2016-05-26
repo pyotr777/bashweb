@@ -1,21 +1,37 @@
 #!/usr/bin/env python
 
-from bottle import route, run
+import bottle
 import subprocess
 import re
 
 # Substitutions
 subst = ["","-"]
+# Permitted hosts
+accessList = ["localhost","127.0.0.1"]
+
+# Check access origin
+def allowAccess():
+    remoteaddr = bottle.request.environ.get('REMOTE_ADDR')
+    forwarded = bottle.request.environ.get('HTTP_X_FORWARDED_FOR')
+
+    if (remoteaddr in accessList) or (forwarded in accessList):
+        return True
+    else:
+        return False
 
 
-
-@route('/')
-@route('/hello')
+@bottle.route('/')
+@bottle.route('/hello')
 def hello():
     return "Hello World!"
 
-@route('/exec/<esc_command>')
+@bottle.route('/exec/<esc_command>')
 def exec_command(esc_command='pwd'):
+    if allowAccess():
+        pass
+    else:
+        return "Access dinied"
+
     command = esc_command.split("_")
     try:
         output = subprocess.check_output(command,stderr=subprocess.STDOUT)
@@ -25,4 +41,9 @@ def exec_command(esc_command='pwd'):
     else:        
         return "<html>\n<pre>\n"+output+"</pre>\n</html>"
 
-run(host='localhost', port=8080, debug=True)
+@bottle.route('/myhost')
+def display_remote_host():
+    return bottle.request.environ.get('REMOTE_ADDR')
+
+bottle.run(host='localhost', port=8080, debug=True)
+
