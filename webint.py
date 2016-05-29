@@ -5,30 +5,42 @@ import subprocess
 import re
 import urllib
 import os
-import command_class
 
 webint = Bottle()
 
+
+# Class for allowed commands
+class Command(object):
+    def __init__(self,pattern_str,transform_rules_files,template_folder):
+        self.pattern_str = pattern_str
+        self.transform_rules_files = transform_rules_files
+        self.template_folder = template_folder
+
+
+
 # Templates folder
-template_folder = os.environ['WEBINT_TEMPLATES']
-if template_folder is None:
-    template_folder = subprocess.check_output(["pwd"],stderr=subprocess.STDOUT)+"/templates"
+try:
+    template_folder = os.environ["WEBINT_TEMPLATES"]
+except:
+    template_folder = os.getcwd()+"/templates"
 # Template file names
 html_template = "index.html"
-html_placeholder = "<output_placeholder/>"
-
+html_placeholder = "<output_placeholder />"
+print "Template folder: " + template_folder
+print "HTML template: " + html_template 
 
 # Permitted hosts
 accessList = ["localhost","127.0.0.1"]
 # Allowed commands
 allowed_commands = []
-command_instance = command_class.Command("git\s(.)*","",template_folder)
+command_instance = Command("git\s(.)*","",template_folder)
 allowed_commands.append(command_instance)
-command_instance = command_class.Command("ls\s(.)*","",template_folder)
+command_instance = Command("ls\s(.)*","",template_folder)
 allowed_commands.append(command_instance)
 
 # Commands patterns have been compiled flag
 compiled = False
+
 
 
 # Check access origin
@@ -62,7 +74,8 @@ def replaceInTemplate(output):
     global template_folder
     global html_template
     global html_placeholder
-    html_template_path = open(template_folder+"/"+html_template)
+    html_template_path = os.path.join(template_folder, html_template)
+    print "Reading from template file "+ html_template_path
     result = ""
     with open(html_template_path, 'r') as f:
         for line in f:
@@ -72,7 +85,17 @@ def replaceInTemplate(output):
                 result += line
     return result
 
+# Workflow Start
+#Display emtpy HTML template with command field.
 @webint.route('/')
+def show_template():
+    if allowAccess():
+        pass
+    else:
+        return "Access denied."
+    return replaceInTemplate("")
+
+
 @webint.route('/hello')
 def hello():
     return "Hello World!"
@@ -84,8 +107,14 @@ def exec_command(esc_command='pwd'):
     else:
         return "Access denied."
 
-    command = urllib.unquote_plus(esc_command)
-
+    URL_str = urllib.unquote_plus(esc_command)
+    URL_parts = URL_str.split("&")
+    command = ""
+    for command_str in URL_parts:
+        command_parts = command_str.split("=")
+        if command_parts[0] == "cmd":
+            command = command_parts[1]
+    print "Parced URL. Have command " + command + "."
     if allowCommand(command):
         pass
     else:
