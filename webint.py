@@ -4,13 +4,32 @@ from bottle import Bottle, run, request
 import subprocess
 import re
 import urllib
+import os
+import command_class
 
 webint = Bottle()
 
+# Templates folder
+template_folder = os.environ['WEBINT_TEMPLATES']
+if template_folder is None:
+    template_folder = subprocess.check_output(["pwd"],stderr=subprocess.STDOUT)+"/templates"
+# Template file names
+html_template = "index.html"
+html_placeholder = "<output_placeholder/>"
+
+
 # Permitted hosts
 accessList = ["localhost","127.0.0.1"]
-allowedCommands = ["git\s(.)*", "ls\s(.)*"]
+# Allowed commands
+allowed_commands = []
+command_instance = command_class.Command("git\s(.)*","",template_folder)
+allowed_commands.append(command_instance)
+command_instance = command_class.Command("ls\s(.)*","",template_folder)
+allowed_commands.append(command_instance)
+
+# Commands patterns have been compiled flag
 compiled = False
+
 
 # Check access origin
 def allowAccess():
@@ -28,9 +47,8 @@ def allowCommand(command):
     print "Checking command "+ command
     if not compiled:
         print "Compiling command patterns"
-        for pattern_str in allowedCommands:
-            compiled_dic[pattern_str] = re.compile(pattern_str)
-
+        for command in allowed_commands:
+            compiled_dic[command.pattern_str] = re.compile(command.pattern_str)
         compiled = True
     for pattern_str in compiled_dic:
         pattern = compiled_dic[pattern_str]
@@ -40,6 +58,19 @@ def allowCommand(command):
     print "No patterns matched. Command "+command+" not allowed."
     return False
 
+def replaceInTemplate(output):
+    global template_folder
+    global html_template
+    global html_placeholder
+    html_template_path = open(template_folder+"/"+html_template)
+    result = ""
+    with open(html_template_path, 'r') as f:
+        for line in f:
+            if html_placeholder in line:
+                result += output
+            else:
+                result += line
+    return result
 
 @webint.route('/')
 @webint.route('/hello')
@@ -64,8 +95,10 @@ def exec_command(esc_command='pwd'):
         output = subprocess.check_output(command.split(),stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as ex:
         return "Error. cmd='"+ " ".join(ex.cmd)+ "' returncode="+ str(ex.returncode)
-    else:        
-        return "<html>\n<pre>\n"+output+"</pre>\n</html>"
+    else:       
+        # Read HTML template replacing "" line 
+        # with command output.
+        return replaceInTemplate(output)
 
 @webint.route('/myhost')
 def display_remote_host():
