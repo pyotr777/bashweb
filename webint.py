@@ -1,6 +1,11 @@
 #!/usr/bin/env python
+#
+# Web interface for some shell commands
+# 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-from bottle import Bottle, run, request
+ver = 0.1
+
+from bottle import Bottle, run, request, get
 import subprocess
 import re
 import urllib
@@ -26,6 +31,8 @@ except:
 # Template file names
 html_template = "index.html"
 html_placeholder = "<output_placeholder />"
+
+print "Webint v" + str(ver)
 print "Template folder: " + template_folder
 print "HTML template: " + html_template 
 
@@ -33,14 +40,14 @@ print "HTML template: " + html_template
 accessList = ["localhost","127.0.0.1"]
 # Allowed commands
 allowed_commands = []
-command_instance = Command("git\s(.)*","",template_folder)
-allowed_commands.append(command_instance)
-command_instance = Command("ls\s(.)*","",template_folder)
-allowed_commands.append(command_instance)
+allowed_commands.append(Command("git\s(.)*","",template_folder))
+allowed_commands.append(Command("ls\s(.)*","",template_folder))
+allowed_commands.append(Command("pwd","",template_folder))
+allowed_commands.append(Command("whoami","",template_folder))
 
 # Commands patterns have been compiled flag
 compiled = False
-
+compiled_dic = {}
 
 
 # Check access origin
@@ -53,21 +60,24 @@ def allowAccess():
     else:
         return False
 
-def allowCommand(command):
+def allowCommand(test_command):
     global compiled
-    compiled_dic = {}
-    print "Checking command "+ command
+    global compiled_dic
+    print "Checking command "+ test_command
     if not compiled:
         print "Compiling command patterns"
         for command in allowed_commands:
+            print command.pattern_str
             compiled_dic[command.pattern_str] = re.compile(command.pattern_str)
         compiled = True
     for pattern_str in compiled_dic:
         pattern = compiled_dic[pattern_str]
-        if pattern.match(command) != None:
-            print "Command "+command+" matched pattern " + pattern_str
+        print "Checking pattern " + pattern_str
+        print test_command
+        if pattern.match(test_command) is not None:
+            print "Command "+test_command+" matched pattern " + pattern_str
             return True
-    print "No patterns matched. Command "+command+" not allowed."
+    print "No patterns matched. Command "+test_command+" not allowed."
     return False
 
 def replaceInTemplate(output):
@@ -98,10 +108,41 @@ def show_template():
 
 @webint.route('/hello')
 def hello():
-    return "Hello World!"
+    return replaceInTemplate("Hello World!")
+
+
+@webint.get('/exec/')
+def exec_get_command():
+    command = request.query.getunicode("cmd")
+    print "Command =" + str(command)
+    if allowAccess():
+        pass
+    else:
+        return "Access denied."
+    if allowCommand(command):
+        pass
+    else:
+        return replaceInTemplate("Command not allowed.")
+    try:
+        print command.split()
+        #output = subprocess.check_output(command.split(),stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output = [l.decode('utf8') for l in proc.stdout.readlines()]
+        err = [l.decode('utf8') for l in proc.stderr.readlines()]
+        joined = " ".join(output) + "<span color=red>" + " ".join(err) + "</span>"
+        return replaceInTemplate(joined)
+    except subprocess.CalledProcessError as ex:
+        error = "Error. cmd='"+ " ".join(ex.cmd)+ "' returncode="+ str(ex.returncode)
+        return replaceInTemplate(error)
+    else:       
+        # Read HTML template replacing "" line 
+        # with command output.
+        return replaceInTemplate(output)
+
 
 @webint.route('/exec/<esc_command>')
 def exec_command(esc_command='pwd'):
+    print "Exec_command " + esc_command
     if allowAccess():
         pass
     else:
