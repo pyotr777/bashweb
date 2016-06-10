@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 #
-# Web interface for some shell commands
+# Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = 0.1
+ver = 0.1-02
 
 from bottle import Bottle, run, request, get
 import subprocess
@@ -20,7 +20,6 @@ class Command(object):
         self.pattern_str = pattern_str
         self.transform_rules_files = transform_rules_files
         self.template_folder = template_folder
-
 
 
 # Templates folder
@@ -67,15 +66,15 @@ def allowCommand(test_command):
     if not compiled:
         print "Compiling command patterns"
         for command in allowed_commands:
-            print command.pattern_str
+            # print command.pattern_str
             compiled_dic[command.pattern_str] = re.compile(command.pattern_str)
         compiled = True
     for pattern_str in compiled_dic:
         pattern = compiled_dic[pattern_str]
-        print "Checking pattern " + pattern_str
-        print test_command
+        # print "Checking pattern " + pattern_str
+        # print test_command
         if pattern.match(test_command) is not None:
-            print "Command "+test_command+" matched pattern " + pattern_str
+            # print "Command "+test_command+" matched pattern " + pattern_str
             return True
     print "No patterns matched. Command "+test_command+" not allowed."
     return False
@@ -94,6 +93,17 @@ def replaceInTemplate(output):
             else:
                 result += line
     return result
+
+# Execute command in shell
+# and return its stdout and stderr strams.
+def Execute(command) :
+    #output = subprocess.check_output(command.split(),stderr=subprocess.STDOUT)
+    print "Executing " + command
+    proc = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
+    output = [l.decode('utf8') for l in proc.stdout.readlines()]
+    err = [l.decode('utf8') for l in proc.stderr.readlines()]    
+    return (output, err)
+
 
 # Workflow Start
 #Display emtpy HTML template with command field.
@@ -114,7 +124,7 @@ def hello():
 @webint.get('/exec/')
 def exec_get_command():
     command = request.query.getunicode("cmd")
-    print "Command =" + str(command)
+    print "CMD: " + str(command)
     if allowAccess():
         pass
     else:
@@ -124,11 +134,8 @@ def exec_get_command():
     else:
         return replaceInTemplate("Command not allowed.")
     try:
-        print command.split()
-        #output = subprocess.check_output(command.split(),stderr=subprocess.STDOUT)
-        proc = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        output = [l.decode('utf8') for l in proc.stdout.readlines()]
-        err = [l.decode('utf8') for l in proc.stderr.readlines()]
+        # print command.split()
+        output, err = Execute(command)
         joined = " ".join(output) + "<span color=red>" + " ".join(err) + "</span>"
         return replaceInTemplate(joined)
     except subprocess.CalledProcessError as ex:
