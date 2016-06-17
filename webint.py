@@ -41,6 +41,8 @@ accessList = ["localhost","127.0.0.1"]
 allowed_commands = []
 allowed_commands.append(Command("git\s(.)*","",template_folder))
 allowed_commands.append(Command("ls\s(.)*","",template_folder))
+allowed_commands.append(Command("echo\s(.)*","",template_folder))
+allowed_commands.append(Command("find\s(.)*","",template_folder))
 allowed_commands.append(Command("pwd","",template_folder))
 allowed_commands.append(Command("whoami","",template_folder))
 
@@ -95,11 +97,11 @@ def replaceInTemplate(output):
     return result
 
 # Execute command in shell
-# and return its stdout and stderr strams.
+# and return its stdout and stderr streams.
 def Execute(command) :
     #output = subprocess.check_output(command.split(),stderr=subprocess.STDOUT)
     print "Executing " + command
-    proc = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     output = [l.decode('utf8') for l in proc.stdout.readlines()]
     err = [l.decode('utf8') for l in proc.stderr.readlines()]    
     return (output, err)
