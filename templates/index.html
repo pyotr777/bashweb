@@ -1,11 +1,14 @@
+<!doctype html>
 <html>
 <head>
+  <script src="../jquery/jquery-3.0.0.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <script>
+  $(document).ready(function(){
+    $("#start").append($("<div>").load("init.html"));
+  });
+  </script>
 </head>
 <body>
-<pre>
-<output_placeholder />
-</pre>
-<form action="/exec/" method="get">
-<input type="text" name="cmd" />
-</form>
+<h1 id="start">Start</h1>
 </body>
