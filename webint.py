@@ -3,9 +3,9 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = 0.1-02
+ver = 0.1-03
 
-from bottle import Bottle, run, request, get
+from bottle import Bottle, run, request, get, static_file
 import subprocess
 import re
 import urllib
@@ -26,10 +26,11 @@ class Command(object):
 try:
     template_folder = os.environ["WEBINT_TEMPLATES"]
 except:
-    template_folder = os.getcwd()+"/templates"
+    template_folder = os.getcwd()+"/webfiles"
 # Template file names
 html_template = "index.html"
 html_placeholder = "<output_placeholder />"
+static_folder = template_folder+"/static"
 
 print "Webint v" + str(ver)
 print "Template folder: " + template_folder
@@ -181,7 +182,12 @@ def exec_command(esc_command='pwd'):
 
 @webint.route('/myhost')
 def display_remote_host():
-    return bottle.request.environ.get('REMOTE_ADDR')
+    return request.environ.get('REMOTE_ADDR')
+
+@webint.route('/static/<filepath:path>')
+def serv_static(filepath):
+    print "Serve file " + filepath + " from " +static_folder
+    return static_file(filepath, root=static_folder)
 
 run(webint,host='localhost', port=8080, debug=True)
 
