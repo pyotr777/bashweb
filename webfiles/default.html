@@ -1,11 +1,8 @@
 <div>
   <h2>Default block</h2>  
   <div id="someid" style="display:none;">Hidden block</div>
-  <form>
-    <input type="text" name="cmd" />
-    <button id="default_button" onclick="execute_default()">exec</button>
-    <submit type="button"></submit>
-  </form>
+  <input type="text" name="cmd" />
+  <button id="default_button" onclick="loadURL(\"whoami\")">exec</button>
 </div>
 <script>
   function default_init() {
@@ -18,5 +15,8 @@
     $("div#someid").load("/exec/whoami",function() { alert("Loaded")});
     $("body").append($("<div>").load("/default.html"));
   }  
+  function loadURL(command) {
+    $("body").append($("<div>").load("/exec/"+command));
+  }
   default_init();
 </script>
