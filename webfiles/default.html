@@ -1,0 +1,22 @@
+<div>
+  <h2>Default block</h2>  
+  <div id="someid" style="display:none;">Hidden block</div>
+  <form>
+    <input type="text" name="cmd" />
+    <button id="default_button" onclick="execute_default()">exec</button>
+    <submit type="button"></submit>
+  </form>
+</div>
+<script>
+  function default_init() {
+    alert("default_init called with i="+i);
+    document.getElementById("someid").style.display = "block"; 
+    $("h2:first").html("Block " + i);
+    i++;   
+  }
+  function execute_default() {
+    $("div#someid").load("/exec/whoami",function() { alert("Loaded")});
+    $("body").append($("<div>").load("/default.html"));
+  }  
+  default_init();
+</script>
