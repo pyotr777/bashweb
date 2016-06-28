@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.2-02"
+ver = "0.2-10"
 
 import bottle
 import subprocess
@@ -21,11 +21,13 @@ except:
 # Template file names
 html_base = "index.html"
 static_folder = web_folder+"/static"
+block_counter = 1
 
 print "Webint v" + str(ver)
 print "Base folder  : " + web_folder
 print "Base page    : " + web_folder + "/" + html_base
 print "Static folder: " + static_folder
+p
 
 
 # Permitted hosts
@@ -87,7 +89,9 @@ def Execute(command) :
 # Now only returns output.
 # In the future - analyse output.
 def displayOutput(output):
-    print "Displaying output"
+
+    print "Displaying output in "
+    div_block=open
     return output
 
 
@@ -162,7 +166,9 @@ def exec_command(esc_command='pwd'):
         return "Command not allowed."
 
     try:
-        output = subprocess.check_output(command.split(),stderr=subprocess.STDOUT)
+        output, err = Execute(command)
+        joined = " ".join(output) + "<span color=red>" + " ".join(err) + "</span>"
+        return displayOutput(joined)
     except subprocess.CalledProcessError as ex:
         return "Error. cmd='"+ " ".join(ex.cmd)+ "' returncode="+ str(ex.returncode)
     else:       

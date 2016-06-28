@@ -1,7 +1,8 @@
 <div>
   <h2>Default block</h2>  
   <div id="someid" style="display:none;">Hidden block</div>
-  <button id="default_button" onclick="loadURL('whoami')">exec</button>
+  <input type="text" name="cmd" onchange="loadURL()" />
+  <button id="default_button" onclick="loadURL()">exec</button>
 </div>
 <script>
   function default_init() {
@@ -14,8 +15,11 @@
     $("div#someid").load("/exec/whoami",function() { alert("Loaded")});
     $("body").append($("<div>").load("/default.html"));
   }  
-  function loadURL(command) {
-    alert("Load block with command "+command)
+
+  # Get command from textfield #someid
+  function loadURL() {
+    command = $("#someid").val();
+    console.log("Load block with command "+command)
     $("body").append($("<div>").load("/exec/"+command));
   }
   default_init();
