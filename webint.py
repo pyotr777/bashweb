@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.2-10"
+ver = "0.2-12"
 
 import bottle
 import subprocess
@@ -21,13 +21,14 @@ except:
 # Template file names
 html_base = "index.html"
 static_folder = web_folder+"/static"
+default_block = web_folder+"/default.html"
 block_counter = 1
 
 print "Webint v" + str(ver)
 print "Base folder  : " + web_folder
 print "Base page    : " + web_folder + "/" + html_base
 print "Static folder: " + static_folder
-p
+print "Default block: " + default_block
 
 
 # Permitted hosts
@@ -89,10 +90,24 @@ def Execute(command) :
 # Now only returns output.
 # In the future - analyse output.
 def displayOutput(output):
-
-    print "Displaying output in "
-    div_block=open
-    return output
+    global block_counter    
+    print "Displaying output in " + default_block
+    # Default DIV block transformations
+    div_transform_id = "someid"    
+    div_block_file = open(default_block)
+    outfilename = static_folder + "/block" + str(block_counter) + ".html"
+    print "Write to " + outfilename
+    out_block_file = open(outfilename, 'w')
+    div = div_block_file.read()
+    div = re.sub(r'<div(.*)"someid"(.*)>(.*)</div>',r'<div\1"someid"\2>'+output+'</div>',div)
+    div = re.sub(r'someid',r'block'+str(block_counter),div)
+    div = re.sub(r'sometxtid',r'text'+str(block_counter),div)
+    out_block_file.write(div)
+    out_block_file.write("\n")
+    out_block_file.close()
+    div_block_file.close()
+    block_counter += 1
+    return div
 
 
 

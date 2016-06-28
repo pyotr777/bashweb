@@ -1,3 +1,8 @@
 h2 {
 	font-family:sans-serif;
 }
+
+div.displayblock {
+    display: none;
+    font-family: monospace;
+}
