@@ -60,6 +60,8 @@ def allowAccess():
 def allowCommand(test_command):
     global compiled
     global compiled_dic
+    if not test_command:
+        return False
     print "Checking command "+ test_command
     if not compiled:
         print "Compiling command patterns"
@@ -89,8 +91,9 @@ def Execute(command) :
 
 # Now only returns output.
 # In the future - analyse output.
-def displayOutput(output):
-    global block_counter    
+def displayOutput(command, output):
+    global block_counter
+    block_counter += 1
     print "Displaying output in " + default_block
     # Default DIV block transformations
     div_transform_id = "someid"    
@@ -99,18 +102,20 @@ def displayOutput(output):
     print "Write to " + outfilename
     out_block_file = open(outfilename, 'w')
     div = div_block_file.read()
-    div = re.sub(r'<div(.*)"someid"(.*)>(.*)</div>',r'<div\1"someid"\2>'+output+'</div>',div)
-    div = re.sub(r'someid',r'block'+str(block_counter),div)
-    div = re.sub(r'sometxtid',r'text'+str(block_counter),div)
+    # Replace default IDs with block unique IDs
+    div = re.sub(r'NNN',str(block_counter),div)
+    # Insert output
+    div = re.sub(r'OUTPUT',output,div)
+    # And command
+    div = re.sub(r'COMMAND',command,div)
+    # Replace block number variable i in javascript
+    div = re.sub(r'var\s*i\s*=\s*1[;]*',r'var i = '+str(block_counter), div)
+
     out_block_file.write(div)
     out_block_file.write("\n")
     out_block_file.close()
     div_block_file.close()
-    block_counter += 1
     return div
-
-
-
 
 
 # Workflow Start
@@ -139,31 +144,6 @@ def serv_static(filepath):
     print "Serve file " + filepath + " from " +static_folder
     return bottle.static_file(filepath, root=static_folder)
 
-@webint.get('/exec/')
-def exec_get_command():
-    command = bottle.request.query.getunicode("cmd")
-    print "CMD: " + str(command)
-    if allowAccess():
-        pass
-    else:
-        return "Access denied."
-    if allowCommand(command):
-        pass
-    else:
-        return displayOutput("Command not allowed.")
-    try:
-        # print command.split()
-        output, err = Execute(command)
-        joined = " ".join(output) + "<span color=red>" + " ".join(err) + "</span>"
-        return displayOutput(joined)
-    except subprocess.CalledProcessError as ex:
-        error = "Error. cmd='"+ " ".join(ex.cmd)+ "' returncode="+ str(ex.returncode)
-        return displayOutput(error)
-    else:       
-        # Read HTML template replacing "" line 
-        # with command output.
-        return displayOutput(output)
-
 
 @webint.route('/exec/<esc_command>')
 def exec_command(esc_command='pwd'):
@@ -171,25 +151,25 @@ def exec_command(esc_command='pwd'):
     if allowAccess():
         pass
     else:
-        return "Access denied."
+        return displayOutput(command, "Access denied.")
 
     command = urllib.unquote_plus(esc_command)    
     print "Parced URL. Have command " + command + "."
     if allowCommand(command):
         pass
     else:
-        return "Command not allowed."
+        return displayOutput(command, "Command not allowed.")
 
     try:
         output, err = Execute(command)
         joined = " ".join(output) + "<span color=red>" + " ".join(err) + "</span>"
-        return displayOutput(joined)
+        return displayOutput(command, joined)
     except subprocess.CalledProcessError as ex:
         return "Error. cmd='"+ " ".join(ex.cmd)+ "' returncode="+ str(ex.returncode)
     else:       
         # Read HTML template replacing "" line 
         # with command output.
-        return displayOutput(output)
+        return displayOutput(command, output)
 
 
 bottle.run(webint,host='localhost', port=8080, debug=True)

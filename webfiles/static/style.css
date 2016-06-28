@@ -2,7 +2,19 @@ h2 {
 	font-family:sans-serif;
 }
 
+.hidden_button {
+    visibility: hidden;
+}
+
+.active_button {
+    visibility: show;    
+}
+
 div.displayblock {
-    display: none;
     font-family: monospace;
+    white-space: pre;
+}
+
+div#div_NNN {
+    visibility: hidden;
 }
