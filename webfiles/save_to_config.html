@@ -1,0 +1,24 @@
+<div>
+    <div id="div_NNN" class="displayblock">OUTPUT</div>
+    <input id="txt1_NNN" type="text" name="DNS" />
+    <input id="txt2_NNN" type="text" name="clientID" onchange="load_block_NNN()" />
+    <button class="hidden_button" id="exec_button_NNN" onclick="load_block_NNN()">exec</button>
+</div>
+<script>
+    var i = 1;    
+    function init_block() {
+        console.log("init_block called with i="+i);
+        $("#txt1_NNN").focus();
+    }
+
+// Get command from textfield #txt_NNN 
+function load_block_NNN() {
+    
+    command = $("#txt_NNN").val();    
+    $("#txt_NNN").prop('disabled', true);
+    $("#exec_button_NNN").attr('class', 'active_button');
+    console.log("Load block NNN with command "+command);
+    $("body").append($("<div>").load("/exec/"+encodeURIComponent(command)));
+}
+init_block();
+</script>
