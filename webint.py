@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.2-12"
+ver = "0.2-13"
 
 import bottle
 import subprocess
@@ -162,7 +162,9 @@ def exec_command(esc_command='pwd'):
 
     try:
         output, err = Execute(command)
-        joined = " ".join(output) + "<span color=red>" + " ".join(err) + "</span>"
+        joined = " ".join(output) 
+        if err and len(err) > 0:
+            joined = joined + "<span color=red>" + " ".join(err) + "</span>"
         return displayOutput(command, joined)
     except subprocess.CalledProcessError as ex:
         return "Error. cmd='"+ " ".join(ex.cmd)+ "' returncode="+ str(ex.returncode)
