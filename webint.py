@@ -10,6 +10,7 @@ import subprocess
 import re
 import urllib
 import os
+import json
 
 webint = bottle.Bottle()
 
@@ -172,6 +173,22 @@ def exec_command(esc_command='pwd'):
         # Read HTML template replacing "" line 
         # with command output.
         return displayOutput(command, output)
+
+
+# Add / replace parts of XML file
+@webint.post('/xml/<filename>')
+def edit_xml(filename):
+    #if os.path.isfile(filename):
+    #    pass
+    #else:
+    #    return "Error. File " + filename + " not found."
+    print "Received XML request for file " + filename
+    keys = bottle.request.forms.keys()
+    for key in keys:
+        val = bottle.request.forms.get(key)
+        print "key="+key+" val="+val
+    # Return stdout and stderr (just a test)
+    return json.dumps({'stdout':'one\ntwo.','stderr':'err'})
 
 
 bottle.run(webint,host='localhost', port=8080, debug=True)

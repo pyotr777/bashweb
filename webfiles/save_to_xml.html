@@ -1,0 +1,37 @@
+<div>
+    <div id="div_NNN" class="displayblock">OUTPUT</div>
+    <form action="/xml/" onsubmit="post_form(this.form)">
+    <input type="hidden" name="xml_file" value="sample.xml" />
+    DNS:
+    <input id="txt1_NNN" type="text" name="DNS" />
+    clientID:
+    <input id="txt2_NNN" type="text" name="clientID" onchange="post_form(this.form)" />
+    <button class="hidden_button" id="exec_button_NNN" onclick="post_form(this.form)">exec</button>
+</div>
+<script>
+    function init_block() {
+        console.log("save_to_xml");
+        $("#exec_button_NNN").attr('class', 'active_button');
+        $("#txt1_NNN").focus();
+    }
+
+// Get command from textfield #txt_NNN 
+function post_form(form) {   
+    alert("Called post_form with " + form)
+    URL = form.action + form.xml_file.value
+    console.log("Calling "+ URL)
+    var formData = {
+        'DNS'       : $('input[name=DNS]').val(),
+        'clientID'  : $('input[name=clientID]').val()
+    }
+
+    //command = $("#txt_NNN").val();
+    //$("#txt_NNN").prop('disabled', true);
+    //console.log("Load block NNN with command "+command);
+    $("body").append($("<div>").load(URL, {
+        url         : URL,
+        data        : formData        
+    }));
+}
+init_block();
+</script>
