@@ -2,9 +2,11 @@
     <div id="div_NNN" class="displayblock">OUTPUT</div>
     <input type="hidden" name="xml_file" value="config/sample.xml" />
     DNS:
-    <input id="txt1_NNN" type="text" name="DNS" />
+    <input id="txt1_NNN" type="text" name="/configuration/websocket/uri" />
     clientID:
-    <input id="txt2_NNN" type="text" name="clientID" onchange="post_form()" />
+    <input id="txt2_NNN" type="text" name="/configuration/oauth20/clientid" onchange="post_form()" />
+    errored:
+    <input id="txt3_NNN" type="text" name="/not/exitsting/path">
     <button class="hidden_button" id="exec_button_NNN" onclick="post_form()">exec</button>
 </div>
 <script>
@@ -24,14 +26,17 @@ function post_form() {
         return false;
     }
 
-    URL = "/xml/edit/" +$('input[name=xml_file]').val() // This should be interpreted as direction to edit XML on server side.
+    URL = "/xml/edit/" +$('input[name=xml_file]').val(); // This should be interpreted as direction to edit XML on server side.
     console.log("Calling "+ URL)
+    
+    var formData = {};
+    // Select all <input type="text"> tags
+    $(":text").each(function(index) {
+        formData[$(this).attr("name")] = $(this).val();
+    });
+    console.log(formData)
 
-    $("body").append($("<div>").load(URL, {
-       // filepath    : $('input[name=xml_file]').val(),
-        DNS         : $('input[name=DNS]').val(),
-        clientID    : $('input[name=clientID]').val()        
-    }));
+    $("body").append($("<div>").load(URL, formData));
     return false;
 }
 init_block();

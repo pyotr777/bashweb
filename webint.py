@@ -10,6 +10,7 @@ import subprocess
 import re
 import urllib
 import os
+import sys
 import json
 from lxml import etree
 
@@ -180,29 +181,30 @@ def exec_command(esc_command='pwd'):
 @webint.post('/xml/edit/<filepath:path>')
 def edit_xml(filepath):
     #path = bottle.request.forms.get('filepath')
-    print "Received XML request for file " + filepath    
-    keys = bottle.request.forms.keys()
-    for key in keys:
-        val = bottle.request.forms.get(key)
-        print "key="+key+" val="+val
-
+    print "Received XML request for file " + filepath
     # Open file
     f = etree.parse("webfiles/" +filepath)
     print etree.tostring(f)
-    root = f.getroot()
-    print "Root: " + root.tag
-    print "Children: " + str(len(root))
-    ws = f.xpath("/"+root.tag + '/websocket/text()')
-    print ws
-    uri = f.xpath("/configuration/websocket/uri")
-    print uri[0].text
-    print "Edit text"
-    uri[0].text = "New value"
+    
+    keys = bottle.request.forms.keys()
+    print len(keys)
+    for key in keys:
+        val = bottle.request.forms.get(key)
+        print "key="+key+" val="+val
+        try:
+            node = f.xpath(key)
+            node[0].text = val
+        except etree.XPathEvalError:
+            print "Wrong path syntax: " + key
+        except:
+            print sys.exc_info()
+            print "Not found: " + key
+    
     print etree.tostring(f)
 
 
     # Return stdout and stderr (just a test)
-    return json.dumps({'stdout':'one\ntwo.','stderr':'err'})
+    return json.dumps({'stdout':"one\ntwo.",'stderr':'err'})
 
 
 bottle.run(webint,host='localhost', port=8080, debug=True)
