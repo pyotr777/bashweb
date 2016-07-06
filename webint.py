@@ -11,6 +11,7 @@ import re
 import urllib
 import os
 import json
+from lxml import etree
 
 webint = bottle.Bottle()
 
@@ -179,11 +180,27 @@ def exec_command(esc_command='pwd'):
 @webint.post('/xml/edit/<filepath:path>')
 def edit_xml(filepath):
     #path = bottle.request.forms.get('filepath')
-    print "Received XML request for file " + filepath
+    print "Received XML request for file " + filepath    
     keys = bottle.request.forms.keys()
     for key in keys:
         val = bottle.request.forms.get(key)
         print "key="+key+" val="+val
+
+    # Open file
+    f = etree.parse("webfiles/" +filepath)
+    print etree.tostring(f)
+    root = f.getroot()
+    print "Root: " + root.tag
+    print "Children: " + str(len(root))
+    ws = f.xpath("/"+root.tag + '/websocket/text()')
+    print ws
+    uri = f.xpath("/configuration/websocket/uri")
+    print uri[0].text
+    print "Edit text"
+    uri[0].text = "New value"
+    print etree.tostring(f)
+
+
     # Return stdout and stderr (just a test)
     return json.dumps({'stdout':'one\ntwo.','stderr':'err'})
 
