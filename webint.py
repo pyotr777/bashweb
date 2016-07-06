@@ -176,13 +176,10 @@ def exec_command(esc_command='pwd'):
 
 
 # Add / replace parts of XML file
-@webint.post('/xml/<filename>')
-def edit_xml(filename):
-    #if os.path.isfile(filename):
-    #    pass
-    #else:
-    #    return "Error. File " + filename + " not found."
-    print "Received XML request for file " + filename
+@webint.post('/xml/edit/<filepath:path>')
+def edit_xml(filepath):
+    #path = bottle.request.forms.get('filepath')
+    print "Received XML request for file " + filepath
     keys = bottle.request.forms.keys()
     for key in keys:
         val = bottle.request.forms.get(key)
