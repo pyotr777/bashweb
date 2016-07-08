@@ -5,8 +5,6 @@
     <input id="txt1_NNN" type="text" name="/configuration/websocket/uri" />
     clientID:
     <input id="txt2_NNN" type="text" name="/configuration/oauth20/clientid" onchange="post_form()" />
-    errored:
-    <input id="txt3_NNN" type="text" name="/not/exitsting/path">
     <button class="hidden_button" id="exec_button_NNN" onclick="post_form()">exec</button>
 </div>
 <script>
@@ -36,7 +34,14 @@ function post_form() {
     });
     console.log(formData)
 
-    $("body").append($("<div>").load(URL, formData));
+    $("body").append($("<div class=displayblock>").load(URL, formData, function(data) {
+        data = data.replace(/\\n/g, "\n");
+        data = data.replace(/</g, "&lt;");
+        data = data.replace(/>/g, "&gt;");
+        console.log(data);
+        $(this).html("New:\n\n" + data);
+    }));
+
     return false;
 }
 init_block();

@@ -13,6 +13,7 @@ import os
 import sys
 import json
 from lxml import etree
+import StringIO
 
 webint = bottle.Bottle()
 
@@ -181,30 +182,54 @@ def exec_command(esc_command='pwd'):
 @webint.post('/xml/edit/<filepath:path>')
 def edit_xml(filepath):
     #path = bottle.request.forms.get('filepath')
-    print "Received XML request for file " + filepath
+    out = StringIO.StringIO()
+    err = StringIO.StringIO()
+    out.write('')
+    print >> out, "Received XML request for file " + filepath 
     # Open file
-    f = etree.parse("webfiles/" +filepath)
-    print etree.tostring(f)
+    try:
+        f = etree.parse("webfiles/" +filepath)
+    except IOError as ex:
+        print  >> err, "Error reading file " + "webfiles/" + filepath
+        stdout = out.getvalue()
+        stderr = err.getvalue()
+        out.close()
+        err.close()
+        return json.dumps({'stdout':stdout, 'stderr':stderr})
+    #print  >> out, etree.tostring(f)
     
     keys = bottle.request.forms.keys()
-    print len(keys)
     for key in keys:
         val = bottle.request.forms.get(key)
-        print "key="+key+" val="+val
+        print  >> out, "key="+key+" val="+val 
         try:
             node = f.xpath(key)
             node[0].text = val
         except etree.XPathEvalError:
-            print "Wrong path syntax: " + key
+            print >> err, "Wrong path syntax: " + key 
+            stdout = out.getvalue()
+            stderr = err.getvalue()
+            out.close()
+            err.close()
+            return json.dumps({'stdout':stdout, 'stderr':stderr})
+
         except:
-            print sys.exc_info()
-            print "Not found: " + key
-    
-    print etree.tostring(f)
-
-
-    # Return stdout and stderr (just a test)
-    return json.dumps({'stdout':"one\ntwo.",'stderr':'err'})
+            print >> err, sys.exc_info()
+            print >> err, "Not found: " + key
+            stdout = out.getvalue()
+            stderr = err.getvalue()
+            out.close()
+            err.close()
+            return json.dumps({'stdout':stdout, 'stderr':stderr})
+   
+    print  >> out, etree.tostring(f) 
+    print etree.tostring(f) 
+    # Return stdout and stderr
+    stdout = out.getvalue()
+    stderr = err.getvalue()
+    out.close()
+    err.close()
+    return json.dumps({'stdout':stdout, 'stderr':stderr})
 
 
 bottle.run(webint,host='localhost', port=8080, debug=True)
