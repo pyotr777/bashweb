@@ -14,6 +14,9 @@ import sys
 import json
 from lxml import etree
 import StringIO
+from gevent import monkey; monkey.patch_all()
+
+import gevent
 
 webint = bottle.Bottle()
 
@@ -231,7 +234,15 @@ def edit_xml(filepath):
     err.close()
     return json.dumps({'stdout':stdout, 'stderr':stderr})
 
+@webint.route('/stream')
+def stream():
+    yield 'START'
+    gevent.sleep(3)
+    yield 'MIDDLE'
+    gevent.sleep(5)
+    yield 'END'
 
-bottle.run(webint,host='localhost', port=8080, debug=True)
+
+bottle.run(webint,host='localhost', port=8080, debug=True, server='gevent')
 
 
