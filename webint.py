@@ -44,10 +44,10 @@ print "Default block: " + default_block
 accessList = ["localhost","127.0.0.1"]
 # Allowed commands
 allowed_commands = []
-allowed_commands.append("git\s(.)*")
-allowed_commands.append("ls\s(.)*")
-allowed_commands.append("echo\s(.)*")
-allowed_commands.append("find\s(.)*")
+allowed_commands.append("git\s([a-zA-Z0-9\.])*")
+allowed_commands.append("ls\s([a-zA-Z0-9\.\-])*")
+allowed_commands.append("echo\s([a-zA-Z0-9\.\-\s])*")
+allowed_commands.append("find\s([a-zA-Z0-9\.])*")
 allowed_commands.append("pwd")
 allowed_commands.append("whoami")
 allowed_commands.append("./test.sh")
@@ -236,6 +236,32 @@ def echo(ws):
     while True:
         msg = ws.receive()
         print "Rec: " + msg
+
+        if allowAccess():
+            pass
+        else:
+            ws.send("Access denied.")
+            break
+ 
+        command = urllib.unquote_plus(msg)
+        print "Have command " + command + "."
+        if allowCommand(command):
+            pass
+        else:
+            return displayOutput(command, "Command not allowed.")
+
+        proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1)
+        with proc.stdout:
+            for line in iter(proc.stdout.readline, b''):
+                print line,            
+                ws.send(line)
+        proc.wait()
+        print "finish"
+        break
+
+
+
+
         msg = "Server " + msg
         if msg is not None:
             print "Snd: " + msg
@@ -245,11 +271,15 @@ def echo(ws):
 @webint.route('/exe', apply=[websocket])
 def exe(ws):
     proc = subprocess.Popen("./test.sh", stdout=subprocess.PIPE, bufsize=1)
+    i = 0;
     with proc.stdout:
         for line in iter(proc.stdout.readline, b''):
-            print "* "+ line,
-            ws.send(line)
+            print "* "+ line,            
+            ws.send("<p style=\"background-color:rgb(100,100,"+str(i*25)+")\">"+line+"</p>")
+            i += 1
     proc.wait()
+    print "finish"
+    return
 
 
 bottle.run(webint,host='localhost', port=8080, debug=True, server=GeventWebSocketServer)
