@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head> 
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/jquery/jquery-3.0.0.js"></script>
+  <script>
+    function myFunction() {
+      var connection = new WebSocket('ws://localhost:8080/exe', ['soap', 'xmpp']);
+      // When the connection is open, send some data to the server
+      connection.onopen = function () {
+        connection.send('Ping'); // Send the message 'Ping' to the server
+      };
+
+      // Log errors
+      connection.onerror = function (error) {
+        console.log('WebSocket Error ' + error);
+      };
+
+      // Log messages from the server
+      connection.onmessage = function (e) {
+        console.log('Server: ' + e.data);
+        $("body").append("<div class=output>"+e.data+"</div>");
+      };
+    };
+  </script>
+</head>
+<body onload="myFunction()">
+<h1 id="start">Streaming</h1>
+</body>

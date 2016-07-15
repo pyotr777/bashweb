@@ -17,6 +17,8 @@ import StringIO
 from gevent import monkey; monkey.patch_all()
 
 import gevent
+from bottle.ext.websocket import GeventWebSocketServer
+from bottle.ext.websocket import websocket
 
 webint = bottle.Bottle()
 
@@ -48,6 +50,7 @@ allowed_commands.append("echo\s(.)*")
 allowed_commands.append("find\s(.)*")
 allowed_commands.append("pwd")
 allowed_commands.append("whoami")
+allowed_commands.append("./test.sh")
 
 # Commands patterns have been compiled flag
 compiled = False
@@ -91,10 +94,12 @@ def allowCommand(test_command):
 def Execute(command) :
     #output = subprocess.check_output(command.split(),stderr=subprocess.STDOUT)
     print "Executing " + command
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    output = [l.decode('utf8') for l in proc.stdout.readlines()]
-    err = [l.decode('utf8') for l in proc.stderr.readlines()]    
-    return (output, err)
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True,  bufsize=1)
+    with proc.stdout:
+        for line in iter(proc.stdout.readline, b''):
+            yield line,
+    proc.wait()
+
 
 # Now only returns output.
 # In the future - analyse output.
@@ -152,33 +157,17 @@ def serv_static(filepath):
     return bottle.static_file(filepath, root=static_folder)
 
 
-@webint.route('/exec/<esc_command>')
+@webint.route('/exec/<esc_command:path>')
 def exec_command(esc_command='pwd'):
     print "Exec_command " + esc_command
-    if allowAccess():
-        pass
-    else:
-        return displayOutput(command, "Access denied.")
-
-    command = urllib.unquote_plus(esc_command)    
-    print "Parced URL. Have command " + command + "."
-    if allowCommand(command):
-        pass
-    else:
-        return displayOutput(command, "Command not allowed.")
-
-    try:
-        output, err = Execute(command)
-        joined = " ".join(output) 
-        if err and len(err) > 0:
-            joined = joined + "<span color=red>" + " ".join(err) + "</span>"
-        return displayOutput(command, joined)
-    except subprocess.CalledProcessError as ex:
-        return "Error. cmd='"+ " ".join(ex.cmd)+ "' returncode="+ str(ex.returncode)
-    else:       
-        # Read HTML template replacing "" line 
-        # with command output.
-        return displayOutput(command, output)
+    command = urllib.unquote_plus(esc_command)
+    print "Executing " + command
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1)
+    with proc.stdout:
+        for line in iter(proc.stdout.readline, b''):
+            print "* "+ line,
+            yield line
+    proc.wait()
 
 
 # Add / replace parts of XML file
@@ -236,13 +225,33 @@ def edit_xml(filepath):
 
 @webint.route('/stream')
 def stream():
-    yield 'START'
-    gevent.sleep(3)
-    yield 'MIDDLE'
-    gevent.sleep(5)
+    yield 'START<br>'
+    gevent.sleep(2)
+    yield 'MIDDLE<br>'
+    gevent.sleep(2)
     yield 'END'
 
+@webint.get('/websocket', apply=[websocket])
+def echo(ws):
+    while True:
+        msg = ws.receive()
+        print "Rec: " + msg
+        msg = "Server " + msg
+        if msg is not None:
+            print "Snd: " + msg
+            ws.send(msg)
+        else: break
 
-bottle.run(webint,host='localhost', port=8080, debug=True, server='gevent')
+@webint.route('/exe', apply=[websocket])
+def exe(ws):
+    proc = subprocess.Popen("./test.sh", stdout=subprocess.PIPE, bufsize=1)
+    with proc.stdout:
+        for line in iter(proc.stdout.readline, b''):
+            print "* "+ line,
+            ws.send(line)
+    proc.wait()
+
+
+bottle.run(webint,host='localhost', port=8080, debug=True, server=GeventWebSocketServer)
 
 

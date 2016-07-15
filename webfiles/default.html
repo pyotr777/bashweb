@@ -18,7 +18,7 @@
 // Get command from textfield #txt_NNN 
 function load_block_NNN() {
     command = $("#txt_NNN").val();    
-    $("#txt_NNN").prop('disabled', true);
+    //$("#txt_NNN").prop('disabled', true);
     $("#exec_button_NNN").attr('class', 'active_button');
     console.log("Load block NNN with command "+command);
     $("body").append($("<div>").load("/exec/"+encodeURIComponent(command)));
