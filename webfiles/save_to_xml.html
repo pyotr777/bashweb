@@ -43,13 +43,27 @@ function post_form() {
     });
     console.log(formData)
 
-    $("body").append($("<div class=displayblock>").load(URL, formData, function(data) {
-      console.log("Call got data with " + NNN)
-      gotData(data, NNN);
+    $("body").append($("<div class=displayblock>").load(URL, formData, function(data) {      
+      parseData(data, NNN);
     }));
 
     return false;
 }
+
+// Parse data from server in JSON format
+// JSON objects should be:
+// stdout, strerr, next
+function parseData(data, n) {
+  console.log("Call got data with " + NNN);
+  console.log(data);
+  var obj = JSON.parse(data);
+  $("#out"+n).append("<div class=output>"+obj.stdout+"</div>");
+  $("#out"+n).animate({ scrollTop: $('#out1').prop("scrollHeight")}, 10);
+  $("#out"+n).append("<div class=stderr>"+obj.stderr+"</div>");
+  $("body").append(obj.next)
+}
+
+
 init_block();
 </script>
 <div class="displayblock" id="outNNN"></div>
