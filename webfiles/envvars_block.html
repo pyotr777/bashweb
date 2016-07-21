@@ -1,0 +1,31 @@
+<div class="default">
+    DISCRIPTION<br>
+    <input type="checkbox" id="use_self_signed" onclick="update_vars()"> Use self signed certificates
+    <div id="SSL_info">
+    DNS: <input type="text" id="DNS_txt_NNN" onchange="update_vars()" value="" /><br>
+    Mail: <input type="text" id="MAIL_txt_NNN" onchange="update_vars()" value="mail@add"/>
+    </div>
+    <input type=hidden id="txt_NNN" value="" />
+    <button class="active_button" id="exec_button_NNN" onclick="update_vars();exec(NNN)">exec</button>
+</div>
+<script>
+    var i = 1;    
+    function init_block() {
+        console.log("init_block called with i="+i);
+        $("#DNS_txt_NNN").val(window.location.hostname);
+        $('#use_self_signed').click(function() {
+          $("#SSL_info").toggle(!this.checked);
+        });
+    }
+    function update_vars() {
+      if (document.getElementById('use_self_signed').checked) {
+        $("#txt_NNN").val("#SETVARS;KP_SELF_CERT=1")
+      } else {
+        $("#txt_NNN").val("#SETVARS;KP_DNS="+$("#DNS_txt_NNN").val() + 
+              ";KP_MAIL="+$("#MAIL_txt_NNN").val());
+      }
+      console.log("Next command is: "+ $("#txt_NNN").val());
+    }
+init_block();
+</script>
+<div class="displayblock" id="outNNN"></div>

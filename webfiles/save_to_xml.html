@@ -1,11 +1,14 @@
 <div>
-    <div id="div_NNN" class="displayblock">OUTPUT</div>
+    
     <input type="hidden" name="xml_file" value="config/sample.xml" />
-    DNS:
-    <input id="txt1_NNN" type="text" name="/configuration/websocket/uri" />
-    clientID:
-    <input id="txt2_NNN" type="text" name="/configuration/oauth20/clientid" onchange="post_form()" />
+    Web socket URI:
+    <input id="txt1_NNN" type="text" name="/configuration/websocket/uri" /><br>
+    Google API clientID:
+    <input id="txt2_NNN" type="text" name="/configuration/oauth20/clientid"/><br>
+    Google API redirect URL:
+    <input id="txt2_NNN" type="text" name="/configuration/oauth20/redirect"/>
     <button class="hidden_button" id="exec_button_NNN" onclick="post_form()">exec</button>
+    <div id="div_NNN" class="displayblock"></div>
 </div>
 <script>
 var submittable=true; // Flag to prevent multiple "form" submissions
@@ -24,25 +27,29 @@ function post_form() {
         return false;
     }
 
-    URL = "/xml/edit/" +$('input[name=xml_file]').val(); // This should be interpreted as direction to edit XML on server side.
+    var URL = "/xml/edit/" +$('input[name=xml_file]').val(); // This should be interpreted as direction to edit XML on server side.
     console.log("Calling "+ URL)
     
     var formData = {};
     // Select all <input type="text"> tags
     $(":text").each(function(index) {
-        formData[$(this).attr("name")] = $(this).val();
+        var id = $(this).attr('id');
+        console.log("Checking "+id)
+        res = id.match(/_NNN$/);
+        if (res != null) {
+          //console.log("Found " + res)
+          formData[$(this).attr("name")] = $(this).val();
+        }
     });
     console.log(formData)
 
     $("body").append($("<div class=displayblock>").load(URL, formData, function(data) {
-        data = data.replace(/\\n/g, "\n");
-        data = data.replace(/</g, "&lt;");
-        data = data.replace(/>/g, "&gt;");
-        console.log(data);
-        $(this).html("New:\n\n" + data);
+      console.log("Call got data with " + NNN)
+      gotData(data, NNN);
     }));
 
     return false;
 }
 init_block();
 </script>
+<div class="displayblock" id="outNNN"></div>

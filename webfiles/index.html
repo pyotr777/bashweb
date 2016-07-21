@@ -1,14 +1,87 @@
 <!doctype html>
 <html>
-<head>
-  <script src="/static/jquery/jquery-3.0.0.js"></script>
+<head> 
   <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/jquery/jquery-3.0.0.js"></script>
   <script>
-  $(document).ready(function(){
-    $("body").append($("<div>").load("/default.html"));
-  });
+    var connection;
+    var exec_flag=1;  // Prevent double execution of same command
+    var next_block_key = "#NEXT";
+    var stderr_key = "#STDERR";
+    DNS = "localhost:8080"
+    MAIL= ""
+    // Call from text field #n
+    function exec(n) {
+      if (!exec_flag) {
+        console.log("Exec Flag is off");
+        return;
+      }
+      exec_flag=0;
+      console.log("Call to exec with n="+n);
+      command = $("#txt_"+n).val();
+      console.log("Executing command "+command);
+      console.log("DNS="+DNS);
+      ExecOnServer(DNS, command, n); // Send the command to the server
+      setTimeout(function(){ exec_flag=1;}, 1000)
+    }
+
+    function gotData(data,n) {
+      console.log('Server: ' + data);        
+      // Check if we have new block
+      if (data.indexOf(next_block_key)==0) {
+        data = data.replace(next_block_key,"")
+        $("body").append(data)
+      } else if (data.indexOf(stderr_key)==0) {
+        data = data.replace(stderr_key,"")
+        $("#out"+n).append("<div class=stderr>"+data+"</div>");
+        $("#out"+n).animate({ scrollTop: $('#out1').prop("scrollHeight")}, 10);
+      } else {
+        data = escape(data);
+        $("#out"+n).append("<div class=output>"+data+"</div>");
+        $("#out"+n).animate({ scrollTop: $('#out1').prop("scrollHeight")}, 10);
+      }
+    }
+
+    function ExecOnServer(DNS, command, n) {
+      console.log("Call to ExecOnServer with "+DNS+", "+command+", "+n)
+      connection = new WebSocket('ws://'+DNS+'/exe', ['soap', 'xmpp']);
+      // When the connection is open, send some data to the server
+      connection.onopen = function () {
+        connection.send(command); // Send the command to the server
+      };
+
+      // Log errors
+      connection.onerror = function (error) {
+        console.log('WebSocket Error ' + error);
+      };
+
+      // Log messages from the server
+      connection.onmessage = function (e) {
+        gotData(e.data,n);
+      }
+    }
+
+    function escape(str) {
+      str = str.replace(/&/g, "&amp;");
+      str = str.replace(/</g, "&lt;");
+      str = str.replace(/>/g, "&gt;");
+      str = str.replace(/"/g, "&quot;");
+      str = str.replace(/'/g, "&#039;");
+      str = str.replace("[38;5;70m", "<span style=\"color:#32b50a;\">");
+      str = str.replace("[m", "</span>");
+      return str
+    }
+
+    $(document).ready(function(){
+      DNS=window.location.hostname +":"+ location.port
+      $("body").append($("<div>").load("/next"));
+      // console.log("w.l.hr: "+window.location.href);  w.l.hr: http://kportal.ml:8080/ 
+      // console.log("w.l.ht+p: "+window.location.hostname +":"+ location.port);  w.l.ht+p: kportal.ml:8080
+    });
+
   </script>
 </head>
 <body>
-<h1 id="start">Executing shell commands</h1>
+<h1 id="start">K-portal installation</h1>
+
 </body>

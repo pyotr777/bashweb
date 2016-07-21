@@ -10,9 +10,23 @@ h2 {
     visibility: show;    
 }
 
+div.default {
+    border: 1px dotted #ddd;
+    margin: 1px 0 1px 0;
+}
+
 div.displayblock {
     font-family: monospace;
     white-space: pre;
+    border: 1px #eee solid;
+    background-color: #eee;
+    max-height: 300px;
+    overflow-x:hidden;
+    overflow-y:visible;
+}
+
+.stderr {
+    color: red;
 }
 
 div#div_NNN {

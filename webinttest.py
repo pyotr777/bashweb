@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.3alpha-04"
+ver = "0.3alpha-02"
 
 import bottle
 import subprocess
@@ -28,39 +28,38 @@ env_vars = dict()
 
 # Variables initialisation
 try:
-    web_folder = os.environ["WEBINT_BASE"]
+    base_folder = os.environ["WEBINT_BASE"]
 except:
     web_folder = os.getcwd()+"/webfiles"
 # Template file names
 html_base = "index.html"
 static_folder = web_folder+"/static"
-default_block = web_folder+"/default.html"
+default_block = web_folder+"/command_block.html"
 block_counter = 0
 
-command_list=['#SETVARS', 
-            'env | grep "KP_"',
-            '',
-            './webint/disp.sh']
+command_list=['env | grep -i "docker"', 
+            'eval $(dinit dev); env | grep -i "docker"',
+            'env | grep -i "docker"',
+            'docker images',
+            'docker ps -a']
 
-descript_list=["Set envvars",
-            "Check env",
-            "edit xml",
-            "disp"]
-
-block_list=["envvars_block.html",
-            "command_block.html",
-            "save_to_xml.html",
-            "command_block.html"]
+descript_list=["Docker envvars",
+            "Init",
+            "Again docker envvars",
+            "images",
+            "list containers"]
 
 env_file = "_env"
 
 print "Webint v" + str(ver)
-print "Web folder  : " + web_folder
-print "Web page    : " + web_folder + "/" + html_base
+print "Base folder  : " + web_folder
+print "Base page    : " + web_folder + "/" + html_base
 print "Static folder: " + static_folder
 print "Default block: " + default_block
 
 
+# Workflow Start
+#Display emtpy HTML template with command field.
 @webint.route('/')
 def show_template():
     global block_counter
@@ -85,38 +84,17 @@ def serv_static(filepath):
     print "Serve file " + filepath + " from " +static_folder
     return bottle.static_file(filepath, root=static_folder)
 
+
 @webint.route('/exe', apply=[websocket])
 def exe(ws):
     global env_vars
     msg = ws.receive()
-    if msg is None or len(msg) == 0:
-        print "Null command"
-        next_block=getNext()
-        ws.send("#NEXT"+next_block)
-        print "Next block sent"
-        return
-
-    #print "Rec: " + msg    
+    print "Rec: " + msg    
     #command = "./exec_env " + msg 
     command = msg
     #command = urllib.unquote_plus(command)
     #args = shlex.split(command)
-    print "Have command " + command
-    if command.find("#SETVARS") == 0:
-        print "found"
-        # Got command with variables in it
-        # Save vars into env_vars and return
-        assignments = command.split(";")
-        print assignments
-        for assign in assignments:
-            parse_vars(assign)
-        next_block=getNext()
-        ws.send("#NEXT"+next_block)
-        print "Next block sent"
-        return
-    else:
-        print "Not found: "+ str(command.find("#SETVARS"))
-
+    print "Have command " + str(command)
     init_env = os.environ.copy()
     merged_env = init_env.copy()
     merged_env.update(env_vars) 
@@ -137,69 +115,11 @@ def exe(ws):
     print "Next block sent"
     return
 
-# Add / replace parts of XML file
-@webint.post('/xml/edit/<filepath:path>')
-def edit_xml(filepath):
-    #path = bottle.request.forms.get('filepath')
-    out = StringIO.StringIO()
-    err = StringIO.StringIO()
-    out.write('')
-    print >> out, "Received XML request for file " + filepath 
-    # Open file
-    filepath=web_folder+"/" +filepath
-    try:
-        f = etree.parse(filepath)
-    except IOError as ex:
-        print  >> err, "Error reading file " + filepath
-        stdout = out.getvalue()
-        stderr = err.getvalue()
-        out.close()
-        err.close()
-        return json.dumps({'stdout':stdout, 'stderr':stderr})
-    #print  >> out, etree.tostring(f)
-    
-    keys = bottle.request.forms.keys()
-    for key in keys:
-        val = bottle.request.forms.get(key)
-        print  >> out, "key="+key+" val="+val 
-        try:
-            node = f.xpath(key)
-            node[0].text = val
-        except etree.XPathEvalError:
-            print >> err, "Wrong path syntax: " + key 
-            stdout = out.getvalue()
-            stderr = err.getvalue()
-            out.close()
-            err.close()
-            return json.dumps({'stdout':stdout, 'stderr':stderr})
-
-        except:
-            print >> err, sys.exc_info()
-            print >> err, "Not found: " + key
-            stdout = out.getvalue()
-            stderr = err.getvalue()
-            out.close()
-            err.close()
-            return json.dumps({'stdout':stdout, 'stderr':stderr})
-   
-    print  >> out, etree.tostring(f) 
-    print etree.tostring(f) 
-    # Return stdout and stderr
-    stdout = html_safe(out.getvalue())
-    stderr = err.getvalue()
-    out.close()
-    err.close()
-    next_block=getNext()
-    print "Next block will be sent"
-    return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
-
-
 
 # Now only returns output.
 # In the future - analyse output.
 def getNext(block=default_block):
     global block_counter
-    global block_list
     block_counter += 1
     print "BC\t" + str(block_counter)
     if block_counter > len(command_list):
@@ -209,8 +129,6 @@ def getNext(block=default_block):
     else:
         command = html_safe(command_list[block_counter-1])
         print "Next command is " + command
-    if block_counter <= len(block_list):
-        block = web_folder+"/" + block_list[block_counter-1]
     print "Displaying output in " + block
     # Default DIV block transformations
     div_transform_id = "someid"    
@@ -227,13 +145,10 @@ def getNext(block=default_block):
     div_block_file.close()
     return div
 
-s = 5
-esc_pairs = [[None] * 2 for y in range(s)]
+s = 3
+esc_pairs = [[None] * s for y in range(2)]
 esc_pairs[0] = ['\\','\\\\'] 
 esc_pairs[1] = ['"','&quot;']
-esc_pairs[2] = ['<','&lt;']
-esc_pairs[3] = ['>','&gt;']
-esc_pairs[4] = ["\n","\\n"]
 
 
 # Replace symbols that can distroy html test field contents.

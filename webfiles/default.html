@@ -1,7 +1,5 @@
-<div>
-    <div id="div_NNN" class="displayblock">OUTPUT</div>
-    <input id="txt_NNN" type="text" name="cmd" onchange="load_block_NNN()" />
-    <button class="hidden_button" id="exec_button_NNN" onclick="load_block_NNN()">exec</button>
+<div class="default">
+    <input id="txt_NNN" type="text" name="cmd" onchange="exec(NNN)" />
 </div>
 <script>
     var i = 1;    
@@ -14,14 +12,6 @@
         }
         $("#txt_NNN").focus();
     }
-
-// Get command from textfield #txt_NNN 
-function load_block_NNN() {
-    command = $("#txt_NNN").val();    
-    //$("#txt_NNN").prop('disabled', true);
-    $("#exec_button_NNN").attr('class', 'active_button');
-    console.log("Load block NNN with command "+command);
-    $("body").append($("<div>").load("/exec/"+encodeURIComponent(command)));
-}
 init_block();
 </script>
+<div class="displayblock" id="outNNN"></div>

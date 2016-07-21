@@ -1,0 +1,16 @@
+<div class="default">
+    DISCRIPTION
+    <input type=hidden id="txt_NNN" value="COMMAND" />
+    <input type=hidden id="tst_NNN" value="test &quot;value&quot;" />
+    <button class="active_button" id="exec_button_NNN" onclick="exec(NNN)">exec</button>
+</div>
+<script>
+    var i = 1;    
+    function init_block() {
+        console.log("init_block called with i="+i);
+        console.log("Next command is: "+ $("#txt_NNN").val());
+        console.log("Test string is: "+ $("#tst_NNN").val());
+    }
+init_block();
+</script>
+<div class="displayblock" id="outNNN"></div>
