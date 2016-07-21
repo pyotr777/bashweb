@@ -21,8 +21,8 @@
       if (document.getElementById('use_self_signed').checked) {
         $("#txt_NNN").val("#SETVARS;KP_SELF_CERT=1")
       } else {
-        $("#txt_NNN").val("#SETVARS;KP_DNS="+$("#DNS_txt_NNN").val() + 
-              ";KP_MAIL="+$("#MAIL_txt_NNN").val());
+        $("#txt_NNN").val("#SETVARS;KP_WEB_DNS="+$("#DNS_txt_NNN").val() + 
+              ";KP_WEB_MAIL="+$("#MAIL_txt_NNN").val());
       }
       console.log("Next command is: "+ $("#txt_NNN").val());
     }
