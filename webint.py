@@ -144,7 +144,7 @@ def edit_xml(filepath):
     out = StringIO.StringIO()
     err = StringIO.StringIO()
     out.write('')
-    print >> out, "Received XML request for file " + filepath 
+    #print >> out, "Received XML request for file " + filepath 
     # Open file
     filepath=web_folder+"/" +filepath
     try:
@@ -161,7 +161,7 @@ def edit_xml(filepath):
     keys = bottle.request.forms.keys()
     for key in keys:
         val = bottle.request.forms.get(key)
-        print  >> out, "key="+key+" val="+val 
+        #print  >> out, "key="+key+" val="+val 
         try:
             node = f.xpath(key)
             node[0].text = val
@@ -183,9 +183,10 @@ def edit_xml(filepath):
             return json.dumps({'stdout':stdout, 'stderr':stderr})
    
     print  >> out, etree.tostring(f) 
-    print etree.tostring(f) 
+    print etree.tostring(f)  
     # Return stdout and stderr
     stdout = html_safe(out.getvalue())
+    print "Stdout:" + stdout
     stderr = err.getvalue()
     out.close()
     err.close()
@@ -227,21 +228,19 @@ def getNext(block=default_block):
     div_block_file.close()
     return div
 
-s = 5
+s = 4
 esc_pairs = [[None] * 2 for y in range(s)]
 esc_pairs[0] = ['\\','\\\\'] 
 esc_pairs[1] = ['"','&quot;']
 esc_pairs[2] = ['<','&lt;']
 esc_pairs[3] = ['>','&gt;']
-esc_pairs[4] = ["\n","\\n"]
+#esc_pairs[4] = ['\n',r'\n']
 
 
 # Replace symbols that can distroy html test field contents.
 def html_safe(command):
     for esc in esc_pairs:
         command = command.replace(esc[0],esc[1])
-    
-    print command
     return command
 
 # Get envvars from output lines

@@ -43,9 +43,9 @@ function post_form() {
     });
     console.log(formData)
 
-    $("body").append($("<div class=displayblock>").load(URL, formData, function(data) {      
+    $.post(URL, formData, function(data) {      
       parseData(data, NNN);
-    }));
+    });
 
     return false;
 }
@@ -62,8 +62,6 @@ function parseData(data, n) {
   $("#out"+n).append("<div class=stderr>"+obj.stderr+"</div>");
   $("body").append(obj.next)
 }
-
-
 init_block();
 </script>
 <div class="displayblock" id="outNNN"></div>
