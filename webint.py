@@ -39,15 +39,18 @@ block_counter = 0
 
 command_list=['#SETVARS', 
             'env | grep "KP_"',
+            './installkportal_ubuntu.sh',
             '',
-            './webint/disp.sh']
+            'sudo -E su kportal -c kp_server.sh 9004 -tls']
 
 descript_list=["Set envvars",
             "Check env",
+            "Start installation"
             "edit xml",
-            "disp"]
+            "Start kp_server"]
 
 block_list=["envvars_block.html",
+            "command_block.html",
             "command_block.html",
             "save_to_xml.html",
             "command_block.html"]
