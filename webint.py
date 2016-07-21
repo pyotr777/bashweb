@@ -140,13 +140,13 @@ def exe(ws):
 # Add / replace parts of XML file
 @webint.post('/xml/edit/<filepath:path>')
 def edit_xml(filepath):
-    #path = bottle.request.forms.get('filepath')
+    next_block=getNext()
     out = StringIO.StringIO()
     err = StringIO.StringIO()
     out.write('')
-    #print >> out, "Received XML request for file " + filepath 
     # Open file
     filepath=web_folder+"/" +filepath
+    # Read file
     try:
         f = etree.parse(filepath)
     except IOError as ex:
@@ -155,8 +155,7 @@ def edit_xml(filepath):
         stderr = err.getvalue()
         out.close()
         err.close()
-        return json.dumps({'stdout':stdout, 'stderr':stderr})
-    #print  >> out, etree.tostring(f)
+        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
     
     keys = bottle.request.forms.keys()
     for key in keys:
@@ -171,7 +170,7 @@ def edit_xml(filepath):
             stderr = err.getvalue()
             out.close()
             err.close()
-            return json.dumps({'stdout':stdout, 'stderr':stderr})
+            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
 
         except:
             print >> err, sys.exc_info()
@@ -180,18 +179,43 @@ def edit_xml(filepath):
             stderr = err.getvalue()
             out.close()
             err.close()
-            return json.dumps({'stdout':stdout, 'stderr':stderr})
+            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
    
-    print  >> out, etree.tostring(f) 
-    print etree.tostring(f)  
+    print etree.tostring(f)
+    # Save to file
+    try:
+        fwrt = open(filepath,'w')
+    except IOError as ex:
+        print  >> err, "Error writing to file " + filepath
+        stdout = out.getvalue()
+        stderr = err.getvalue()
+        out.close()
+        err.close()
+        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
+
+    print >> fwrt, etree.tostring(f)
+    fwrt.close()
+    print "Wrote XML to " + filepath
+    try:
+        frd = open(filepath,'r')
+    except IOError as ex:
+        print  >> err, "Error reading file " + filepath
+        stdout = out.getvalue()
+        stderr = err.getvalue()
+        out.close()
+        err.close()
+        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
+
+    new_xml = frd.read()
+    frd.close()
+    print >> out, new_xml
     # Return stdout and stderr
     stdout = html_safe(out.getvalue())
     print "Stdout:" + stdout
     stderr = err.getvalue()
     out.close()
     err.close()
-    next_block=getNext()
-    print "Next block will be sent"
+
     return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
 
 
