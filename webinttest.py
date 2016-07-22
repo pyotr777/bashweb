@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.3alpha-02"
+ver = "0.3alpha-05"
 
 import bottle
 import subprocess
@@ -20,6 +20,7 @@ import gevent.queue
 import gevent
 from bottle.ext.websocket import GeventWebSocketServer
 from bottle.ext.websocket import websocket
+import thread
 
 webint = bottle.Bottle()
 
@@ -28,38 +29,30 @@ env_vars = dict()
 
 # Variables initialisation
 try:
-    base_folder = os.environ["WEBINT_BASE"]
+    web_folder = os.environ["WEBINT_BASE"]
 except:
     web_folder = os.getcwd()+"/webfiles"
 # Template file names
 html_base = "index.html"
 static_folder = web_folder+"/static"
-default_block = web_folder+"/command_block.html"
+default_block = web_folder+"/default.html"
 block_counter = 0
 
-command_list=['env | grep -i "docker"', 
-            'eval $(dinit dev); env | grep -i "docker"',
-            'env | grep -i "docker"',
-            'docker images',
-            'docker ps -a']
+command_list=['./test.sh']
 
-descript_list=["Docker envvars",
-            "Init",
-            "Again docker envvars",
-            "images",
-            "list containers"]
+descript_list=["Test stderr display"]
+
+block_list=["command_block.html"]
 
 env_file = "_env"
 
 print "Webint v" + str(ver)
-print "Base folder  : " + web_folder
-print "Base page    : " + web_folder + "/" + html_base
+print "Web folder  : " + web_folder
+print "Web page    : " + web_folder + "/" + html_base
 print "Static folder: " + static_folder
 print "Default block: " + default_block
 
 
-# Workflow Start
-#Display emtpy HTML template with command field.
 @webint.route('/')
 def show_template():
     global block_counter
@@ -84,42 +77,227 @@ def serv_static(filepath):
     print "Serve file " + filepath + " from " +static_folder
     return bottle.static_file(filepath, root=static_folder)
 
-
 @webint.route('/exe', apply=[websocket])
 def exe(ws):
     global env_vars
+    global webint
     msg = ws.receive()
-    print "Rec: " + msg    
+    if msg is None or len(msg) == 0:
+        print "Null command"
+        next_block=getNext()
+        ws.send("#NEXT"+next_block)
+        print "Next block sent"
+        return
+
+    #print "Rec: " + msg    
     #command = "./exec_env " + msg 
     command = msg
     #command = urllib.unquote_plus(command)
     #args = shlex.split(command)
-    print "Have command " + str(command)
+    print "Have command " + command
+    if command.find("#SETVARS") == 0:
+        print "found"
+        # Got command with variables in it
+        # Save vars into env_vars and return
+        assignments = command.split(";")
+        print assignments
+        for assign in assignments:
+            parse_vars(assign)
+        next_block=getNext()        
+        ws.send("#NEXT"+next_block)
+        print "Next block sent"
+        return
+
     init_env = os.environ.copy()
     merged_env = init_env.copy()
     merged_env.update(env_vars) 
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=merged_env, bufsize=1, shell=True, executable="/bin/bash")
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=merged_env, bufsize=1, shell=True, executable="/bin/bash")
+    
+    # Actual call to readfrom is blocked untill process is finished
+    # thread.start_new_thread( readfrom, (iter(proc.stdout.readline, b''), ) )
+    # print "Started stdout thread"
+    # thread.start_new_thread( readfrom, (iter(proc.stderr.readline, b''), ) )
+    # print "Started stderr thread"
+
+
+
+    # out_t.start() blocks untill process is finished
+    #print "Threading"
+    #out_t = threading.Thread(target=readfrom, args=(proc.stdout,))
+    #print "out_t created"
+    #err_t = threading.Thread(target=readfrom, args=(proc.stderr,))
+    #print "err_t created"
+    #out_t.start()
+    #print "out_t started"
+    #err_t.start()
+
+
+    # This does a synchronous reading from stdin. Before process is not finished stdout_reader.start() wont exit
+    #print "process started"
+    #stdout_queue = Queue.Queue()
+    #print "Creating async reader"
+    #stdout_reader = AsynchronousFileReader(proc.stdout, stdout_queue)
+    #print "Async reader created"
+    #stdout_reader.start()
+    #print "Async reader started"
+    #stderr_queue = Queue.Queue()
+    #stderr_reader = AsynchronousFileReader(proc.stderr, stderr_queue)
+    #stderr_reader.start()
+    #print "Ready to read"
+    # Check the queues if we received some output (until there is nothing more to get).
+    #while not stdout_reader.eof() or not stderr_reader.eof():
+    #    print "in loop"
+    #    # Show what we received from standard output.
+    #    while not stdout_queue.empty():
+    #        line = stdout_queue.get()
+    #        print 'Received line on standard output: ' + repr(line)
+    # 
+    #   # Show what we received from standard error.
+    #   while not stderr_queue.empty():
+    #        line = stderr_queue.get()
+    #        print 'Received line on standard error: ' + repr(line)
+    # 
+    #   # Sleep a bit before asking the readers again.
+    #   time.sleep(.1)
+    #
+    ## Let's be tidy and join the threads we've started.
+    #stdout_reader.join()
+    #stderr_reader.join()
+    # 
+    # Close subprocess' file descriptors.
+    #proc.stdout.close()
+    #proc.stderr.close()
+    
+
+    # This displays both streams only after process is finished
+    #stdout_value, stderr_value = proc.communicate()
+    #print '\tpass through:', repr(stdout_value)
+    #print '\tstderr      :', repr(stderr_value)
+    
+    # This displays everything at once after process is finished
+    #for ot, er in izip(proc.stdout, proc.stderr):
+    #    print ot,
+    #    parse_vars(ot)
+    #    ws.send(ot)
+    #    print "! "+er,     
+    #    ws.send("#STDERR"+er)
+
     with proc.stdout:
         for line in iter(proc.stdout.readline, b''):
-            print line,
+            print line
             parse_vars(line)
-            ws.send(line)
-    with proc.stderr:
-        for line in iter(proc.stderr.readline, b''):
-            print line,            
-            ws.send("#STDERR"+line)
+            ws.send(line)        
+
+    #with proc.stderr:
+    #    for line in iter(proc.stderr.readline, b''):
+    #        print line         
+    #        ws.send("#STDERR"+line)
     
     proc.wait()
     next_block=getNext()
     ws.send("#NEXT"+next_block)
+#    if next_block=="OK":
+#        self.server.shutdown()
     print "Next block sent"
     return
+
+
+def readfrom(iterat):
+    print "Read"
+    for line in iterat:
+        print line
+
+
+
+# Add / replace parts of XML file
+@webint.post('/xml/edit/<filepath:path>')
+def edit_xml(filepath):
+    next_block=getNext()
+    out = StringIO.StringIO()
+    err = StringIO.StringIO()
+    out.write('')
+    # Open file
+    if filepath.find("/") != 0:
+        filepath = web_folder+"/" +filepath
+    # Read file
+    try:
+        f = etree.parse(filepath)
+    except IOError as ex:
+        print  >> err, "Error reading file " + filepath
+        stdout = out.getvalue()
+        stderr = err.getvalue()
+        out.close()
+        err.close()
+        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
+    
+    keys = bottle.request.forms.keys()
+    for key in keys:
+        val = bottle.request.forms.get(key)
+        #print  >> out, "key="+key+" val="+val 
+        try:
+            node = f.xpath(key)
+            node[0].text = val
+        except etree.XPathEvalError:
+            print >> err, "Wrong path syntax: " + key 
+            stdout = out.getvalue()
+            stderr = err.getvalue()
+            out.close()
+            err.close()
+            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
+
+        except:
+            print >> err, sys.exc_info()
+            print >> err, "Not found: " + key
+            stdout = out.getvalue()
+            stderr = err.getvalue()
+            out.close()
+            err.close()
+            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
+   
+    print etree.tostring(f)
+    # Save to file
+    try:
+        fwrt = open(filepath,'w')
+    except IOError as ex:
+        print  >> err, "Error writing to file " + filepath
+        stdout = out.getvalue()
+        stderr = err.getvalue()
+        out.close()
+        err.close()
+        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
+
+    print >> fwrt, etree.tostring(f)
+    fwrt.close()
+    print "Wrote XML to " + filepath
+    try:
+        frd = open(filepath,'r')
+    except IOError as ex:
+        print  >> err, "Error reading file " + filepath
+        stdout = out.getvalue()
+        stderr = err.getvalue()
+        out.close()
+        err.close()
+        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
+
+    new_xml = frd.read()
+    frd.close()
+    print >> out, new_xml
+    # Return stdout and stderr
+    stdout = html_safe(out.getvalue())
+    print "Stdout:" + stdout
+    stderr = err.getvalue()
+    out.close()
+    err.close()
+
+    return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
+
 
 
 # Now only returns output.
 # In the future - analyse output.
 def getNext(block=default_block):
     global block_counter
+    global block_list
     block_counter += 1
     print "BC\t" + str(block_counter)
     if block_counter > len(command_list):
@@ -129,6 +307,8 @@ def getNext(block=default_block):
     else:
         command = html_safe(command_list[block_counter-1])
         print "Next command is " + command
+    if block_counter <= len(block_list):
+        block = web_folder+"/" + block_list[block_counter-1]
     print "Displaying output in " + block
     # Default DIV block transformations
     div_transform_id = "someid"    
@@ -145,18 +325,19 @@ def getNext(block=default_block):
     div_block_file.close()
     return div
 
-s = 3
-esc_pairs = [[None] * s for y in range(2)]
+s = 4
+esc_pairs = [[None] * 2 for y in range(s)]
 esc_pairs[0] = ['\\','\\\\'] 
 esc_pairs[1] = ['"','&quot;']
+esc_pairs[2] = ['<','&lt;']
+esc_pairs[3] = ['>','&gt;']
+#esc_pairs[4] = ['\n',r'\n']
 
 
 # Replace symbols that can distroy html test field contents.
 def html_safe(command):
     for esc in esc_pairs:
         command = command.replace(esc[0],esc[1])
-    
-    print command
     return command
 
 # Get envvars from output lines
@@ -169,6 +350,37 @@ def parse_vars(str):
         for v in env_vars:
             print v+" = "+ env_vars[v]
 
+
+# class AsynchronousFileReader(threading.Thread):
+#     '''
+#     Helper class to implement asynchronous reading of a file
+#     in a separate thread. Pushes read lines on a queue to
+#     be consumed in another thread.
+#     '''
+ 
+#     def __init__(self, fd, queue):
+#         print "AsyncronousFileReader initialisation"
+#         assert isinstance(queue, Queue.Queue)
+#         assert callable(fd.readline)
+#         threading.Thread.__init__(self)
+#         self._fd = fd
+#         self._queue = queue
+ 
+#     def run(self):
+#         '''The body of the tread: read lines and put them on the queue.'''
+#         print "Run method called"
+#         for line in iter(self._fd.readline, ''):
+#             self._queue.put(line)
+#             print "In run:"+ line
+
+#     def start(self):        
+#         print "Start method called"
+#         super(AsynchronousFileReader, self).start()
+#         print "Start method exited"
+ 
+#     def eof(self):
+#         '''Check whether there is no more content to expect.'''
+#         return not self.is_alive() and self._queue.empty()
 
 
 bottle.run(webint,host='0.0.0.0', port=8080, debug=True, server=GeventWebSocketServer)

@@ -129,17 +129,12 @@ def exe(ws):
     init_env = os.environ.copy()
     merged_env = init_env.copy()
     merged_env.update(env_vars) 
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=merged_env, bufsize=1, shell=True, executable="/bin/bash")
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=merged_env, bufsize=1, shell=True, executable="/bin/bash")
     with proc.stdout:
         for line in iter(proc.stdout.readline, b''):
             print line,
             parse_vars(line)
             ws.send(line)
-
-    with proc.stderr:
-        for line in iter(proc.stderr.readline, b''):
-            print line,
-            ws.send("#STDERR"+line)
     
     proc.wait()
     next_block=getNext()
