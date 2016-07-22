@@ -39,13 +39,13 @@ block_counter = 0
 
 command_list=['#SETVARS', 
             'env | grep "KP_"',
-            './installkportal_ubuntu.sh',
+            '/home/ubuntu/kportal/installkportal_ubuntu.sh',
             '',
             'sudo -E su kportal -c kp_server.sh 9004 -tls']
 
 descript_list=["Set envvars",
             "Check env",
-            "Start installation"
+            "Start installation",
             "edit xml",
             "Start kp_server"]
 

@@ -34,11 +34,11 @@
       } else if (data.indexOf(stderr_key)==0) {
         data = data.replace(stderr_key,"")
         $("#out"+n).append("<div class=stderr>"+data+"</div>");
-        $("#out"+n).animate({ scrollTop: $('#out1').prop("scrollHeight")}, 10);
+        $("#out"+n).animate({ scrollTop: $('#out'+n).prop("scrollHeight")}, 10);
       } else {
         data = escape(data);
         $("#out"+n).append("<div class=output>"+data+"</div>");
-        $("#out"+n).animate({ scrollTop: $('#out1').prop("scrollHeight")}, 10);
+        $("#out"+n).animate({ scrollTop: $('#out'+n).prop("scrollHeight")}, 10);
       }
     }
 
