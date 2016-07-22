@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.3alpha-05"
+ver = "0.3alpha-06"
 
 import bottle
 import subprocess
@@ -132,13 +132,13 @@ def exe(ws):
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=merged_env, bufsize=1, shell=True, executable="/bin/bash")
     with proc.stdout:
         for line in iter(proc.stdout.readline, b''):
-            print line
+            print line,
             parse_vars(line)
             ws.send(line)
 
     with proc.stderr:
         for line in iter(proc.stderr.readline, b''):
-            print line         
+            print line,
             ws.send("#STDERR"+line)
     
     proc.wait()
