@@ -59,6 +59,10 @@
       connection.onmessage = function (e) {
         gotData(e.data,n);
       }
+
+      connection.onclose = function (e) {
+        console.log("Connection closed with code "+ e.code +" : " + e.reason);
+      }
     }
 
     function escape(str) {
