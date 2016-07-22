@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.3alpha-04"
+ver = "0.3alpha-05"
 
 import bottle
 import subprocess
@@ -41,12 +41,12 @@ command_list=['#SETVARS',
             'env | grep "KP_"',
             '/home/ubuntu/kportal/installkportal_ubuntu.sh',
             '',
-            'sudo -E su kportal -c kp_server.sh 9004 -tls']
+            'sudo -E su kportal -c "kp_server.sh 9004 -tls"']
 
 descript_list=["Set envvars",
             "Check env",
             "Start installation",
-            "edit xml",
+            "Edit kp_server configuration file",
             "Start kp_server"]
 
 block_list=["envvars_block.html",
@@ -129,6 +129,11 @@ def exe(ws):
             print line,
             parse_vars(line)
             ws.send(line)
+            # Check stderr
+            for line in iter(proc.stderr.readline, b''):
+            print line,            
+            ws.send("#STDERR"+line)
+
     with proc.stderr:
         for line in iter(proc.stderr.readline, b''):
             print line,            
@@ -148,7 +153,8 @@ def edit_xml(filepath):
     err = StringIO.StringIO()
     out.write('')
     # Open file
-    filepath=web_folder+"/" +filepath
+    if filepath.find("/") != 0:
+        filepath = web_folder+"/" +filepath
     # Read file
     try:
         f = etree.parse(filepath)
