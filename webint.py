@@ -126,17 +126,17 @@ def exe(ws):
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=merged_env, bufsize=1, shell=True, executable="/bin/bash")
     with proc.stdout:
         for line in iter(proc.stdout.readline, b''):
-            print line,
+            print line
             parse_vars(line)
             ws.send(line)
             # Check stderr
             for line in iter(proc.stderr.readline, b''):
-            print line,            
-            ws.send("#STDERR"+line)
+                print line
+                ws.send("#STDERR"+line)
 
     with proc.stderr:
         for line in iter(proc.stderr.readline, b''):
-            print line,            
+            print line         
             ws.send("#STDERR"+line)
     
     proc.wait()
