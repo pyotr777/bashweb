@@ -43,7 +43,7 @@ command_list=['#SETVARS',
             '',
             'sudo -E su kportal -c "kp_server.sh 9004 -tls"',
             'start_server.sh',
-            '/home/ubunu/kportal/start_apache.sh 9005']
+            '/home/ubuntu/kportal/start_apache.sh 9005']
 
 descript_list=["Set envvars",
             "Check env",
