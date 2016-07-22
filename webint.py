@@ -41,18 +41,24 @@ command_list=['#SETVARS',
             'env | grep "KP_"',
             '/home/ubuntu/kportal/installkportal_ubuntu.sh',
             '',
-            'sudo -E su kportal -c "kp_server.sh 9004 -tls"']
+            'sudo -E su kportal -c "kp_server.sh 9004 -tls"',
+            'start_server.sh',
+            '/home/ubunu/kportal/start_apache.sh 9005']
 
 descript_list=["Set envvars",
             "Check env",
             "Start installation",
             "Edit kp_server configuration file",
-            "Start kp_server"]
+            "Start kp_server",
+            "Check that Docker is running",
+            "Check that Apache is running"]
 
 block_list=["envvars_block.html",
             "command_block.html",
             "command_block.html",
             "save_to_xml.html",
+            "command_block.html",
+            "command_block.html",
             "command_block.html"]
 
 env_file = "_env"
@@ -129,10 +135,6 @@ def exe(ws):
             print line
             parse_vars(line)
             ws.send(line)
-            # Check stderr
-            for line in iter(proc.stderr.readline, b''):
-                print line
-                ws.send("#STDERR"+line)
 
     with proc.stderr:
         for line in iter(proc.stderr.readline, b''):
