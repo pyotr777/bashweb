@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.3alpha-06"
+ver = "0.3alpha-07"
 
 import bottle
 import subprocess
@@ -105,14 +105,14 @@ def exe(ws):
         print "Next block sent"
         return
 
-    #print "Rec: " + msg    
+    print "Rec: " + msg    
     #command = "./exec_env " + msg 
-    command = msg
+    command = parseCommand(msg)
     #command = urllib.unquote_plus(command)
     #args = shlex.split(command)
     print "Have command " + command
     if command.find("#SETVARS") == 0:
-        print "found"
+        print "setvars"
         # Got command with variables in it
         # Save vars into env_vars and return
         assignments = command.split(";")
@@ -237,9 +237,6 @@ def getNext(block=default_block):
         print "No more commands"
         os.remove
         return "OK"
-    else:
-        command = html_safe(command_list[block_counter-1])
-        print "Next command is " + command
     if block_counter <= len(block_list):
         block = web_folder+"/" + block_list[block_counter-1]
     print "Displaying output in " + block
@@ -250,7 +247,7 @@ def getNext(block=default_block):
     # Replace default IDs with block unique IDs
     div = re.sub(r'NNN',str(block_counter),div)
     # And command
-    div = re.sub(r'COMMAND',command,div)
+    div = re.sub(r'COMMAND',str(block_counter),div)
     # Discription
     div = re.sub(r'DISCRIPTION',descript_list[block_counter-1],div)
     # Replace block number variable i in javascript
@@ -284,5 +281,15 @@ def parse_vars(str):
             print v+" = "+ env_vars[v]
 
 
+# Get command from message
+# If message contains ";", split it.
+# First part should be integer number of command, second part - arguments for the command.
+def parseCommand(msg):
+    if msg.find(";") > 0:
+        parts = msg.split(";")
+        command = command_list[int(parts[0]) - 1] + ";" + ";".join(parts[1:])
+    else:
+        command = command_list[int(msg) - 1]
+    return command
 
 bottle.run(webint,host='0.0.0.0', port=8080, debug=True, server=GeventWebSocketServer)
