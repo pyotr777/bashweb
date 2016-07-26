@@ -8,8 +8,27 @@
     var exec_flag=1;  // Prevent double execution of same command
     var next_block_key = "#NEXT";
     var stderr_key = "#STDERR";
-    DNS = "localhost:8080"
-    MAIL= ""
+    DNS = "localhost:8080"; // default location
+    MAIL= "";
+    SESSION = parseHrefSession();
+    var block_counter = 1;
+    var active = 1;
+
+    // Get session name from arguments.
+    // If not set return "".
+    function parseHrefSession() {
+      var query_string = {};
+      var query = window.location.search.substring(1);
+      var vars = query.split("&");
+      for (var i=0;i<vars.length;i++) {
+        var pair = vars[i].split("=");
+        if (pair[0] == "session") {
+          return "?session="+pair[1]
+        }
+      }
+      return ""
+    }
+
     // Call from text field #n
     function exec(n) {
       if (!exec_flag) {
@@ -44,7 +63,8 @@
 
     function ExecOnServer(DNS, command, n) {
       console.log("Call to ExecOnServer with "+DNS+", "+command+", "+n)
-      connection = new WebSocket('ws://'+DNS+'/exe', ['soap', 'xmpp']);
+      connection = new WebSocket('ws://'+DNS+'/exe?counter='+block_counter, ['soap', 'xmpp']);
+      block_counter++;
       // When the connection is open, send some data to the server
       connection.onopen = function () {
         connection.send(command); // Send the command to the server
@@ -77,8 +97,14 @@
     }
 
     $(document).ready(function(){
-      DNS=window.location.hostname +":"+ location.port
-      $("body").append($("<div>").load("/next"));
+      if (active) {
+        DNS=window.location.hostname +":"+ location.port
+        console.log("Connecting to /next?counter="+block_counter)
+        $("body").append($("<div>").load("/next?counter="+block_counter));
+        block_counter++;
+      } else {
+        console.log("index.html not active.");
+      }
       // console.log("w.l.hr: "+window.location.href);  w.l.hr: http://kportal.ml:8080/ 
       // console.log("w.l.ht+p: "+window.location.hostname +":"+ location.port);  w.l.ht+p: kportal.ml:8080
     });
@@ -86,6 +112,6 @@
   </script>
 </head>
 <body>
-<h1 id="start">K-portal installation</h1>
+<h1 id="start">Test</h1>
 
 </body>
