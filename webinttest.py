@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.3alpha-08"
+ver = "0.3alpha-09"
 
 import bottle
 import subprocess
@@ -20,6 +20,7 @@ import gevent.queue
 import gevent
 from bottle.ext.websocket import GeventWebSocketServer
 from bottle.ext.websocket import websocket
+import csv
 
 webint = bottle.Bottle()
 
@@ -31,23 +32,40 @@ try:
     web_folder = os.environ["WEBINT_BASE"]
 except:
     web_folder = os.getcwd()+"/webfiles"
+
+try:
+    script_number = os.environ["SCRIPT_NUM"]
+except:
+    script_number = 1
+
 # Template file names
 html_base = "index.html"
 static_folder = web_folder+"/static"
 default_block = web_folder+"/default.html"
 block_counter = 0
+WS_alive = False
+output_file_handler = 0
 
-command_list=['./test.sh 1',
-            './test.sh 2',
-            './test.sh 3',]
+command_list=[]
+descript_list=[]
+block_list=[]
+files2remove=[]
 
-descript_list=["Test 1",
-            "Test 2",
-            "Test 3"]
+# Read command_list, descrition list and block list from tsv file "script.tsv"
+with open(static_folder+"/config/script_"+str(script_number)+".tsv", 'r') as script:
+    script = csv.reader(script, delimiter='\t')
+    i = 0
+    for row in script:
+        print "row:" + str(row)
+        command_list.append(row[0])
+        descript_list.append(row[1])
+        block_list.append(row[2])
+        i = i + 1
 
-block_list=["command_block.html",
-            "command_block.html",
-            "command_block.html"]
+print command_list
+print descript_list
+print block_list
+
 
 env_file = "_env"
 
@@ -86,7 +104,12 @@ def serv_static(filepath):
 def exe(ws):
     global env_vars
     global block_counter
-    print "block counter = " + str(block_counter)
+    global WS_alive
+    global output_file_handler
+    WS_alive = True
+    print "WEB SOCKET\talive"
+    print "BC_\t" + str(block_counter)
+
     msg = ws.receive()
     if msg is None or len(msg) == 0:
         print "Null command"
@@ -96,10 +119,7 @@ def exe(ws):
         return
 
     print "Rec: " + msg    
-    #command = "./exec_env " + msg 
     command = parseCommand(msg)
-    #command = urllib.unquote_plus(command)
-    #args = shlex.split(command)
     print "Have command " + command
     if command.find("#SETVARS") == 0:
         print "setvars"
@@ -118,102 +138,31 @@ def exe(ws):
 
     init_env = os.environ.copy()
     merged_env = init_env.copy()
-    merged_env.update(env_vars) 
+    merged_env.update(env_vars)    
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=merged_env, bufsize=1, shell=True, executable="/bin/bash")
+    
+    # Open output file
+    output_file_handler = openOutputFile(block_counter)
+
+    # Loop with running process output
     with proc.stdout:
         for line in iter(proc.stdout.readline, b''):
-            print line,
-            parse_vars(line)
-            ws.send(line)
-    
+            print "---"
+            output(line,ws)
+            parse_vars(line)            
     proc.wait()
-    next_block=getNext()
-    ws.send("#NEXT"+next_block)
-    print "Next block sent"
-    return
-
-# Add / replace parts of XML file
-@webint.post('/xml/edit/<filepath:path>')
-def edit_xml(filepath):
-    next_block=getNext()
-    out = StringIO.StringIO()
-    err = StringIO.StringIO()
-    out.write('')
-    # Open file
-    if filepath.find("/") != 0:
-        filepath = web_folder+"/" +filepath
-    # Read file
-    try:
-        f = etree.parse(filepath)
-    except IOError as ex:
-        print  >> err, "Error reading file " + filepath
-        stdout = out.getvalue()
-        stderr = err.getvalue()
-        out.close()
-        err.close()
-        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
     
-    keys = bottle.request.forms.keys()
-    for key in keys:
-        val = bottle.request.forms.get(key)
-        #print  >> out, "key="+key+" val="+val 
-        try:
-            node = f.xpath(key)
-            node[0].text = val
-        except etree.XPathEvalError:
-            print >> err, "Wrong path syntax: " + key 
-            stdout = out.getvalue()
-            stderr = err.getvalue()
-            out.close()
-            err.close()
-            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
+    # Close output file
+    output_file_handler.close()
 
-        except:
-            print >> err, sys.exc_info()
-            print >> err, "Not found: " + key
-            stdout = out.getvalue()
-            stderr = err.getvalue()
-            out.close()
-            err.close()
-            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
-   
-    print etree.tostring(f)
-    # Save to file
-    try:
-        fwrt = open(filepath,'w')
-    except IOError as ex:
-        print  >> err, "Error writing to file " + filepath
-        stdout = out.getvalue()
-        stderr = err.getvalue()
-        out.close()
-        err.close()
-        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
-
-    print >> fwrt, etree.tostring(f)
-    fwrt.close()
-    print "Wrote XML to " + filepath
-    try:
-        frd = open(filepath,'r')
-    except IOError as ex:
-        print  >> err, "Error reading file " + filepath
-        stdout = out.getvalue()
-        stderr = err.getvalue()
-        out.close()
-        err.close()
-        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
-
-    new_xml = frd.read()
-    frd.close()
-    print >> out, new_xml
-    # Return stdout and stderr
-    stdout = html_safe(out.getvalue())
-    print "Stdout:" + stdout
-    stderr = err.getvalue()
-    out.close()
-    err.close()
-
-    return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
-
+    next_block=getNext()
+    ws.send("#NEXT"+next_block)    
+    print "Next block sent"
+    WS_alive = False
+    print "WEB SOCKET\tdead"
+    if next_block == "OK":        
+        shutdown()
+    return
 
 
 # Now only returns output.
@@ -221,6 +170,8 @@ def edit_xml(filepath):
 def getNext(block=default_block):
     global block_counter
     global block_list
+    global static_folder
+    global files2remove
     block_counter += 1
     print "BC\t" + str(block_counter)
     if block_counter > len(command_list):
@@ -243,22 +194,39 @@ def getNext(block=default_block):
     # Replace block number variable i in javascript
     div = re.sub(r'var\s*i\s*=\s*1[;]*',r'var i = '+str(block_counter), div)
     div_block_file.close()
+    # Save block to file blockNNN.html
+    outfilename = static_folder + "/block_" + str(block_counter) + ".html"
+    print "Write to " + outfilename
+    out_block_file = open(outfilename, 'w')
+    files2remove.append(outfilename)
+    out_block_file.write(div)
+    out_block_file.write("\n")
+    out_block_file.close()
     return div
 
-s = 4
-esc_pairs = [[None] * 2 for y in range(s)]
-esc_pairs[0] = ['\\','\\\\'] 
-esc_pairs[1] = ['"','&quot;']
-esc_pairs[2] = ['<','&lt;']
-esc_pairs[3] = ['>','&gt;']
-#esc_pairs[4] = ['\n',r'\n']
+# Print line to WS and to block file and to stdout
+def output(str, ws):
+    global WS_alive
+    global output_file_handler
+    if WS_alive:
+        try:
+            ws.send(str)
+        except WebSocketError as ex:
+            print "Web socket died."
+            WS_alive = False;
+    print str
+    print >> output_file_handler, str
 
+# Open output file 
+def openOutputFile(block_counter):
+    global static_folder
+    global files2remove
+    outfilename = static_folder + "/output_" + str(block_counter) + ".txt"
+    output_file = open(outfilename, 'w')
+    files2remove.append(outfilename)
+    print "Write output to " + outfilename
+    return output_file
 
-# Replace symbols that can distroy html test field contents.
-def html_safe(command):
-    for esc in esc_pairs:
-        command = command.replace(esc[0],esc[1])
-    return command
 
 # Get envvars from output lines
 def parse_vars(str):
@@ -266,9 +234,6 @@ def parse_vars(str):
     m = re.search("([\w/]+)=([\S]+)",str)
     if m is not None and len(m.groups()) == 2:
         env_vars[m.group(1)] = m.group(2)
-        print "Env vars:"
-        for v in env_vars:
-            print v+" = "+ env_vars[v]
 
 
 # Get command from message
@@ -281,5 +246,20 @@ def parseCommand(msg):
     else:
         command = command_list[int(msg) - 1]
     return command
+
+
+# Shutdown server
+def shutdown():
+    global files2remove
+    print "Shutting down"
+    # Remove temporary files
+    for file in files2remove:
+        print "Delete "+file
+        os.remove(file)
+    pid = os.getpid()
+    print "PID\t"+str(pid)
+    ps = subprocess.check_output(["ps","ax",str(pid)])
+    print ps
+    subprocess.check_call(["kill",str(pid)])
 
 bottle.run(webint,host='0.0.0.0', port=8080, debug=True, server=GeventWebSocketServer)
