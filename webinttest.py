@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.3alpha-07"
+ver = "0.3alpha-08"
 
 import bottle
 import subprocess
@@ -37,15 +37,15 @@ static_folder = web_folder+"/static"
 default_block = web_folder+"/default.html"
 block_counter = 0
 
-command_list=['#SETVARS', 
-            'env | grep "KP_"',
-            './test.sh']
+command_list=['./test.sh 1',
+            './test.sh 2',
+            './test.sh 3',]
 
-descript_list=["Set envvars",
-            "Check env",
-            "Test stderr display"]
+descript_list=["Test 1",
+            "Test 2",
+            "Test 3"]
 
-block_list=["envvars_block.html",
+block_list=["command_block.html",
             "command_block.html",
             "command_block.html"]
 
@@ -85,6 +85,8 @@ def serv_static(filepath):
 @webint.route('/exe', apply=[websocket])
 def exe(ws):
     global env_vars
+    global block_counter
+    print "block counter = " + str(block_counter)
     msg = ws.receive()
     if msg is None or len(msg) == 0:
         print "Null command"
