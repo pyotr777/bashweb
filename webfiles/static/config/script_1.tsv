@@ -1,5 +1,7 @@
-command_block.html	./test.sh 1	Test 1
-envvars_block.html	#SETVARS	Set envvars
+envvars_block.html	#SETVARS	Set environnment vars
 command_block.html	env | grep "KP_"	Check KP_* envvars
-command_block.html	./test.sh 2	Test 2
-command_block.html	./test.sh 3	Test 3
+command_block.html	/home/ubuntu/kportal/installkportal_ubuntu.sh	Start installation
+save_to_xml.html	/etc/kportal/www/config.xml	Edit kp_server configuration file
+command_block.html	sudo -E su kportal -c "kp_server.sh 9004 -tls"	Start kp_server
+command_block.html	start_server.sh	Check that Docker is running
+command_block.html	/home/ubuntu/kportal/start_apache.sh 9005	Check that Apache is running

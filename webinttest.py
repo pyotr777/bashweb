@@ -135,10 +135,10 @@ def attach_session(session):
                 output_f.close()
                 page = page + "\n<div class=\"displayblock\">" + output + "\n</div>\n"
         # Synchronise counters for this webint instance and browser to number of blocks in session folder
-        block_counter = br_counter
-        print "Set block_counter in browser to " + str(block_counter)
+        br_counter = block_counter
+        print "Set block_counter in browser to " + str(br_counter)
         # Replace block number variable i in javascript
-        page = re.sub(r'var\s*block_counter\s*=\s*1[;]*',r'var block_counter = '+str(block_counter)+";", page)
+        page = re.sub(r'var\s*block_counter\s*=\s*1[;]*',r'var block_counter = '+str(br_counter)+";", page)
         # Deactivate index.html (prevent loading next block again)
         page = re.sub(r'var\s*active\s*=\s*1[;]*',r'var active = 0;', page)
         page = page + "\n<script>block_counter = "+str(br_counter)+";\n"
@@ -235,21 +235,7 @@ def exe(ws):
     print "Session="+session    
     WS_alive = True
     print "WEB SOCKET\talive"
-    print "BC_\t" + str(block_counter)
-    # Check browser block counter
-    if hasattr(bottle.request.query, 'counter'):
-        counter = bottle.request.query.counter
-        if counter is not None:
-            print "have counter " + counter
-            # Check block file 
-            block = read_output(session,counter)
-            if block:
-                ws.send(block)
-                execute_command = False
-            else:
-                print "No saved block found"
-    else:
-        print "Counter not in query"
+    print "BC(server)\t" + str(block_counter)
     msg = ws.receive()
     if msg is None or len(msg) == 0:
         print "Null command"
@@ -273,13 +259,12 @@ def exe(ws):
         ws.send("#NEXT"+next_block)
         print "Next block sent"
         return
-    else:
-        print "Not found: "+ str(command.find("#SETVARS"))
 
     if execute_command:
         init_env = os.environ.copy()
         merged_env = init_env.copy()
-        merged_env.update(env_vars)    
+        merged_env.update(env_vars)
+        print "Exectuing "+command 
         proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=merged_env, bufsize=1, shell=True, executable="/bin/bash")
         
         # Open output file
@@ -303,6 +288,93 @@ def exe(ws):
     if next_block == "OK":        
         shutdown()
     return
+
+# Add / replace parts of XML file
+@webint.post('/xml/edit/<command_n>')
+def edit_xml(command_n):
+    next_block=getNext()
+    out = StringIO.StringIO()
+    err = StringIO.StringIO()
+    out.write('')
+    # Get file path
+    filepath = parseCommand(command_n)
+    print "Editing "+filepath
+    # Open file    
+    if filepath.find("/") != 0:
+        filepath = web_folder+"/" +filepath
+    # Read file
+    try:
+        f = etree.parse(filepath)
+    except IOError as ex:
+        print  >> err, "Error reading file " + filepath
+        stdout = out.getvalue()
+        stderr = err.getvalue()
+        out.close()
+        err.close()
+        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
+    
+    keys = bottle.request.forms.keys()
+    for key in keys:
+        val = bottle.request.forms.get(key)
+        #print  >> out, "key="+key+" val="+val 
+        try:
+            node = f.xpath(key)
+            node[0].text = val
+        except etree.XPathEvalError:
+            print >> err, "Wrong path syntax: " + key 
+            stdout = out.getvalue()
+            stderr = err.getvalue()
+            out.close()
+            err.close()
+            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
+
+        except:
+            print >> err, sys.exc_info()
+            print >> err, "Not found: " + key
+            stdout = out.getvalue()
+            stderr = err.getvalue()
+            out.close()
+            err.close()
+            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
+   
+    print etree.tostring(f)
+    # Save to file
+    try:
+        fwrt = open(filepath,'w')
+    except IOError as ex:
+        print  >> err, "Error writing to file " + filepath
+        stdout = out.getvalue()
+        stderr = err.getvalue()
+        out.close()
+        err.close()
+        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
+
+    print >> fwrt, etree.tostring(f)
+    fwrt.close()
+    print "Wrote XML to " + filepath
+    try:
+        frd = open(filepath,'r')
+    except IOError as ex:
+        print  >> err, "Error reading file " + filepath
+        stdout = out.getvalue()
+        stderr = err.getvalue()
+        out.close()
+        err.close()
+        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
+
+    new_xml = frd.read()
+    frd.close()
+    print >> out, new_xml
+    # Return stdout and stderr
+    stdout = html_safe(out.getvalue())
+    print "Stdout:" + stdout
+    stderr = err.getvalue()
+    out.close()
+    err.close()
+
+    return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
+
+
 
 
 # Now only returns output.
@@ -399,6 +471,21 @@ def parseCommand(msg):
         command = command_list[int(parts[0]) - 1] + ";" + ";".join(parts[1:])
     else:
         command = command_list[int(msg) - 1]
+    return command
+
+# HTML-sanitation
+s = 4
+esc_pairs = [[None] * 2 for y in range(s)]
+esc_pairs[0] = ['\\','\\\\'] 
+esc_pairs[1] = ['"','&quot;']
+esc_pairs[2] = ['<','&lt;']
+esc_pairs[3] = ['>','&gt;']
+#esc_pairs[4] = ['\n',r'\n']
+
+# Replace symbols that can distroy html test field contents.
+def html_safe(command):
+    for esc in esc_pairs:
+        command = command.replace(esc[0],esc[1])
     return command
 
 
