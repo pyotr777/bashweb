@@ -85,7 +85,8 @@
       }
     }
 
-    function escape(str) {
+    // TODO: Works only for WS. For session (fastforward) not executed.
+    function escape(str) {  
       str = str.replace(/&/g, "&amp;");
       str = str.replace(/</g, "&lt;");
       str = str.replace(/>/g, "&gt;");

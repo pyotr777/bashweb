@@ -1,6 +1,7 @@
-command_block.html	./test.sh 1	Test 1
-envvars_block.html	#SETVARS	Set envvars
+envvars_block.html	#SETVARS	Set environnment vars
 command_block.html	env | grep "KP_"	Check KP_* envvars
+command_block.html	./test.sh 3	Start installation (step 3)
 save_to_xml.html	../config.xml	Edit kp_server configuration file
-command_block.html	./disp.sh	Test 2
-command_block.html	./test.sh 3	Test 3
+command_block.html	./disp.sh	Display test
+command_block.html	./test.sh 6	Test 6
+command_block.html	./test.sh 7	Test 7

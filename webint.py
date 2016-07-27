@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.3alpha-12"
+ver = "0.3alpha-13"
 
 import bottle
 import subprocess
@@ -132,6 +132,7 @@ def attach_session(session):
                 print "Found "+output_fname
                 output_f = open(output_fname,'r')
                 output = output_f.read()
+                output = html_safe(output)
                 output_f.close()
                 page = page + "\n<div class=\"displayblock\">" + output + "\n</div>\n"
         # Synchronise counters for this webint instance and browser to number of blocks in session folder
@@ -247,6 +248,10 @@ def exe(ws):
     print "Rec: " + msg    
     command = parseCommand(msg)
     print "Have command " + command
+
+    # Open output file
+    output_file_handler = openOutputFile(block_counter)
+    
     if command.find("#SETVARS") == 0:
         print "setvars"
         # Got command with variables in it
@@ -258,6 +263,7 @@ def exe(ws):
         next_block=getNext()
         ws.send("#NEXT"+next_block)
         print "Next block sent"
+        output_file_handler.close()
         return
 
     if execute_command:
@@ -267,9 +273,6 @@ def exe(ws):
         print "Exectuing "+command 
         proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=merged_env, bufsize=1, shell=True, executable="/bin/bash")
         
-        # Open output file
-        output_file_handler = openOutputFile(block_counter)
-
         # Loop with running process output
         with proc.stdout:
             for line in iter(proc.stdout.readline, b''):
@@ -277,8 +280,8 @@ def exe(ws):
                 parse_vars(line)            
         proc.wait()
         
-        # Close output file
-        output_file_handler.close()
+    # Close output file
+    output_file_handler.close()
 
     next_block=getNext()
     ws.send("#NEXT"+next_block)    
@@ -362,18 +365,24 @@ def edit_xml(command_n):
         err.close()
         return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
 
-    new_xml = frd.read()
+    new_xml = html_safe(frd.read())
     frd.close()
     print >> out, new_xml
+
+    # Open output file
+    output_file_handler = openOutputFile(block_counter-1)  # Decrement beacuse getNext() called before this point
+    print >> output_file_handler, new_xml,
+    output_file_handler.close()
+
     # Return stdout and stderr
-    stdout = html_safe(out.getvalue())
+    stdout = out.getvalue()
     print "Stdout:" + stdout
     stderr = err.getvalue()
     out.close()
     err.close()
 
-    return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
-
+    outputXML = json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
+    return outputXML
 
 
 
