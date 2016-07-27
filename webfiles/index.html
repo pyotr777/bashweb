@@ -1,6 +1,6 @@
 <!doctype html>
 <html>
-<head> 
+<head>
   <link rel="stylesheet" href="/static/style.css">
   <script src="/static/jquery/jquery-3.0.0.js"></script>
   <script>
@@ -40,12 +40,15 @@
       command = $("#txt_"+n).val();
       console.log("Executing command "+command);
       console.log("DNS="+DNS);
-      ExecOnServer(DNS, command, n); // Send the command to the server
+      // Disable button
+      $("#exec_button_"+n).prop( "disabled", true );
+      // Send the command to the server
+      ExecOnServer(DNS, command, n);
       setTimeout(function(){ exec_flag=1;}, 1000)
     }
 
     function gotData(data,n) {
-      console.log('Server: ' + data);        
+      console.log('Server: ' + data);
       // Check if we have new block
       if (data.indexOf(next_block_key)==0) {
         data = data.replace(next_block_key,"")
@@ -86,7 +89,7 @@
     }
 
     // TODO: Works only for WS. For session (fastforward) not executed.
-    function escape(str) {  
+    function escape(str) {
       str = str.replace(/&/g, "&amp;");
       str = str.replace(/</g, "&lt;");
       str = str.replace(/>/g, "&gt;");
@@ -106,7 +109,7 @@
       } else {
         console.log("index.html not active.");
       }
-      // console.log("w.l.hr: "+window.location.href);  w.l.hr: http://kportal.ml:8080/ 
+      // console.log("w.l.hr: "+window.location.href);  w.l.hr: http://kportal.ml:8080/
       // console.log("w.l.ht+p: "+window.location.hostname +":"+ location.port);  w.l.ht+p: kportal.ml:8080
     });
 

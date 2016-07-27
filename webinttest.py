@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.3alpha-13"
+ver = "0.4alpha-1"
 
 import bottle
 import subprocess
@@ -26,6 +26,7 @@ import csv
 import random
 from string import ascii_uppercase, digits
 import shutil
+from time import sleep
 
 webint = bottle.Bottle()
 
@@ -69,8 +70,8 @@ with open(static_folder+"/config/script_"+str(script_number)+".tsv", 'r') as scr
     for row in script:
         print "row:" + str(row)
         block_list.append(row[0])
-        command_list.append(row[1])        
-        descript_list.append(row[2])        
+        command_list.append(row[1])
+        descript_list.append(row[2])
         i = i + 1
 
 print command_list
@@ -95,11 +96,11 @@ def show_template():
 
     if bottle.request.query is None or bottle.request.query.session is None or len(bottle.request.query.session)<1:
         session = ''.join([random.choice(ascii_uppercase + digits) for n in xrange(8)])
-        print "SESSION\t"+session        
+        print "SESSION\t"+session
         return start_session()
     else:
         session = bottle.request.query.session
-        print "have session "+ session        
+        print "have session "+ session
         return attach_session(session)
 
 def attach_session(session):
@@ -126,8 +127,8 @@ def attach_session(session):
             block_f.close()
             # Read output
             output_fname = string.replace(block_fname,'block_','output_')
-            output_fname = string.replace(output_fname,'.html','.txt')            
-            print "Looking for "+ output_fname            
+            output_fname = string.replace(output_fname,'.html','.txt')
+            print "Looking for "+ output_fname
             if os.path.isfile(output_fname):
                 print "Found "+output_fname
                 output_f = open(output_fname,'r')
@@ -136,7 +137,9 @@ def attach_session(session):
                 output_f.close()
                 page = page + "\n<div class=\"displayblock\">" + output + "\n</div>\n"
         # Synchronise counters for this webint instance and browser to number of blocks in session folder
-        br_counter = block_counter
+        if br_counter > block_counter:
+            block_counter = br_counter
+            print "BC updated to " + str(block_counter)
         print "Set block_counter in browser to " + str(br_counter)
         # Replace block number variable i in javascript
         page = re.sub(r'var\s*block_counter\s*=\s*1[;]*',r'var block_counter = '+str(br_counter)+";", page)
@@ -159,7 +162,7 @@ def read_output(session,counter):
         print "OUTPUT FOUND in "+output_fname
         output_f = open(output_fname,'r')
         output = output_f.read()
-        output_f.close()            
+        output_f.close()
         return output
     else:
         print "Not found " + output_fname
@@ -167,7 +170,7 @@ def read_output(session,counter):
 
 def start_session():
     global block_counter
-    global session    
+    global session
     block_counter = 0
     page = "start_session.html"
     print "Block counter reset to " + str(block_counter)
@@ -185,7 +188,7 @@ def show_index():
     global block_counter
     global session
     #block_counter = 0
-    print "Reading base page "+ html_base    
+    print "Reading base page "+ html_base
     #print "Block counter reset to " + str(block_counter)
     index_filename = os.path.join(web_folder,html_base)
     index_f = open(index_filename)
@@ -207,10 +210,10 @@ def loadNext():
     if hasattr(bottle.request.query, 'counter'):
         b_counter = bottle.request.query.counter
         if b_counter is not None:
-            print "have browser counter " + b_counter             
+            print "have browser counter " + b_counter
             br_counter = int(b_counter)
             while br_counter <= block_counter:
-                # Check block file 
+                # Check block file
                 block = read_block(session,b_counter)
                 if block:
                     next_b = getNext(b_counter)
@@ -233,7 +236,7 @@ def exe(ws):
     global block_counter
     global WS_alive
     execute_command = True
-    print "Session="+session    
+    print "Session="+session
     WS_alive = True
     print "WEB SOCKET\talive"
     print "BC(server)\t" + str(block_counter)
@@ -245,13 +248,13 @@ def exe(ws):
         print "Next block sent"
         return
 
-    print "Rec: " + msg    
+    print "Rec: " + msg
     command = parseCommand(msg)
     print "Have command " + command
 
     # Open output file
     output_file_handler = openOutputFile(block_counter)
-    
+
     if command.find("#SETVARS") == 0:
         print "setvars"
         # Got command with variables in it
@@ -270,25 +273,25 @@ def exe(ws):
         init_env = os.environ.copy()
         merged_env = init_env.copy()
         merged_env.update(env_vars)
-        print "Exectuing "+command 
+        print "Exectuing "+command
         proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=merged_env, bufsize=1, shell=True, executable="/bin/bash")
-        
+
         # Loop with running process output
         with proc.stdout:
             for line in iter(proc.stdout.readline, b''):
                 output(line,ws,output_file_handler)
-                parse_vars(line)            
-        proc.wait()
-        
+                parse_vars(line)
+                sleep(0.1)
+
     # Close output file
     output_file_handler.close()
 
     next_block=getNext()
-    ws.send("#NEXT"+next_block)    
+    ws.send("#NEXT"+next_block)
     print "Next block sent"
     WS_alive = False
     print "WEB SOCKET\tdead\n====="
-    if next_block == "OK":        
+    if next_block == "OK":
         shutdown()
     return
 
@@ -302,7 +305,7 @@ def edit_xml(command_n):
     # Get file path
     filepath = parseCommand(command_n)
     print "Editing "+filepath
-    # Open file    
+    # Open file
     if filepath.find("/") != 0:
         filepath = web_folder+"/" +filepath
     # Read file
@@ -315,16 +318,16 @@ def edit_xml(command_n):
         out.close()
         err.close()
         return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
-    
+
     keys = bottle.request.forms.keys()
     for key in keys:
         val = bottle.request.forms.get(key)
-        #print  >> out, "key="+key+" val="+val 
+        #print  >> out, "key="+key+" val="+val
         try:
             node = f.xpath(key)
             node[0].text = val
         except etree.XPathEvalError:
-            print >> err, "Wrong path syntax: " + key 
+            print >> err, "Wrong path syntax: " + key
             stdout = out.getvalue()
             stderr = err.getvalue()
             out.close()
@@ -339,7 +342,7 @@ def edit_xml(command_n):
             out.close()
             err.close()
             return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block})
-   
+
     print etree.tostring(f)
     # Save to file
     try:
@@ -393,7 +396,7 @@ def getNext(counter=None):
     global block_list
     global static_folder
     global files2remove
-    global session    
+    global session
     print counter
     if counter is None:
         print "no counter in getNext"
@@ -403,10 +406,10 @@ def getNext(counter=None):
     else:
         counter = int(counter)
         if counter > block_counter:
-            block_counter += 1            
+            block_counter += 1
             print "block_counter shoud be equal to counter\t"+str(block_counter)+"\t" + str(counter)
-    
-    print "Get next ("+str(counter)+")"    
+
+    print "Get next ("+str(counter)+")"
     print "BC\t" + str(block_counter)
     if counter > len(command_list):
         print "No more commands"
@@ -416,7 +419,7 @@ def getNext(counter=None):
         block = web_folder+"/" + block_list[counter-1]
     print "Use " + block
     # Default DIV block transformations
-    div_transform_id = "someid"    
+    div_transform_id = "someid"
     div_block_file = open(block)
     div = div_block_file.read()
     # Replace default IDs with block unique IDs
@@ -451,7 +454,7 @@ def output(str, ws, output_file_handler):
     print str,
     print >> output_file_handler, str,
 
-# Open output file 
+# Open output file
 def openOutputFile(block_counter):
     global static_folder
     global files2remove
@@ -485,7 +488,7 @@ def parseCommand(msg):
 # HTML-sanitation
 s = 4
 esc_pairs = [[None] * 2 for y in range(s)]
-esc_pairs[0] = ['\\','\\\\'] 
+esc_pairs[0] = ['\\','\\\\']
 esc_pairs[1] = ['"','&quot;']
 esc_pairs[2] = ['<','&lt;']
 esc_pairs[3] = ['>','&gt;']
