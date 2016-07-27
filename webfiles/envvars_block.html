@@ -6,12 +6,13 @@
     Mail: <input type="text" id="MAIL_txt_NNN" onchange="update_vars()" value="kportal.aics.riken@gmail.com" size="50"/>
     </div>
     <input type=hidden id="txt_NNN" value="" />
-    <button class="active_button" id="exec_button_NNN" onclick="update_vars();exec(NNN)">exec</button>
+    <button class="hidden_button" id="exec_button_NNN" onclick="update_vars();exec(NNN)">exec</button>
 </div>
 <script>
     var i = 1;    
     function init_block() {
         console.log("init_block called with i="+i);
+        $("#exec_button_NNN").attr('class', 'active_button');
         $("#DNS_txt_NNN").val(window.location.hostname);
         $('#use_self_signed').click(function() {
           $("#SSL_info").toggle(!this.checked);

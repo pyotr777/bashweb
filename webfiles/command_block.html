@@ -1,13 +1,14 @@
 <div class="default">
     DISCRIPTION
     <input type=hidden id="txt_NNN" value="COMMAND" />
-    <button class="active_button" id="exec_button_NNN" onclick="exec(NNN)">exec</button>
+    <button class="hidden_button" id="exec_button_NNN" onclick="exec(NNN)">exec</button>
 </div>
 <script>
     var i = NNN;
     function init_block() {
         console.log("command_block called with i="+i);
         console.log("Next command is: "+ $("#txt_NNN").val());
+        $("#exec_button_NNN").attr('class', 'active_button');
     }
 init_block();
 </script>
