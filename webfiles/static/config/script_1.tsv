@@ -1,3 +1,5 @@
-./test.sh 1	Test 1	command_block.html
-./test.sh 2	Test 2	command_block.html
-./test.sh 3	Test 3	command_block.html
+command_block.html	./test.sh 1	Test 1
+envvars_block.html	#SETVARS	Set envvars
+command_block.html	env | grep "KP_"	Check KP_* envvars
+command_block.html	./test.sh 2	Test 2
+command_block.html	./test.sh 3	Test 3

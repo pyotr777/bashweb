@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.3alpha-10"
+ver = "0.3alpha-12"
 
 import bottle
 import subprocess
@@ -61,15 +61,16 @@ descript_list=[]
 block_list=[]
 files2remove=[]
 
+# CONFIGURATION (workflow) initialisation
 # Read command_list, descrition list and block list from tsv file "script.tsv"
 with open(static_folder+"/config/script_"+str(script_number)+".tsv", 'r') as script:
     script = csv.reader(script, delimiter='\t')
     i = 0
     for row in script:
         print "row:" + str(row)
-        command_list.append(row[0])
-        descript_list.append(row[1])
-        block_list.append(row[2])
+        block_list.append(row[0])
+        command_list.append(row[1])        
+        descript_list.append(row[2])        
         i = i + 1
 
 print command_list
