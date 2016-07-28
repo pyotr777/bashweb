@@ -20,7 +20,7 @@ div.displayblock {
     white-space: pre;
     border: 1px #eee solid;
     background-color: #eee;
-    max-height: 500px;
+    max-height: 300px;
     overflow-x:hidden;
     overflow-y:visible;
 }

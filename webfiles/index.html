@@ -44,7 +44,7 @@
       $("#exec_button_"+n).prop( "disabled", true );
       // Send the command to the server
       ExecOnServer(DNS, command, n);
-      setTimeout(function(){ exec_flag=1;}, 1000)
+      setTimeout(function(){ exec_flag=1;}, 500)
     }
 
     function gotData(data,n) {
