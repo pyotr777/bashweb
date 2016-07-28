@@ -282,7 +282,7 @@ def exe(ws):
                 output(line,ws,output_file_handler)
                 parse_vars(line)
                 sleep(0.1)
-
+        proc.wait()
     # Close output file
     output_file_handler.close()
 
