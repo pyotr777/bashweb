@@ -8,7 +8,8 @@
     var exec_flag=1;  // Prevent double execution of same command
     var next_block_key = "#NEXT";
     var stderr_key = "#STDERR";
-    DNS = "localhost:8080"; // default location
+    DNS = window.location.hostname +":"+ window.location.port;
+    console.log("Server address = "+DNS)
     MAIL= "";
     SESSION = parseHrefSession();
     var block_counter = 1;
