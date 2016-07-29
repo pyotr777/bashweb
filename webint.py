@@ -179,9 +179,9 @@ def start_session():
     # Default DIV block transformations
     start_file = open(file_name)
     block = start_file.read()
+    start_file.close()
     # Replace default IDs with block unique IDs
     block = re.sub(r'SESSION',session,block)
-    start_file.close()
     return block
 
 def show_index():
@@ -212,18 +212,23 @@ def loadNext():
         if b_counter is not None:
             print "have browser counter " + b_counter
             br_counter = int(b_counter)
-            while br_counter <= block_counter:
-                # Check block file
-                block = read_block(session,b_counter)
-                if block:
-                    next_b = getNext(b_counter)
-                    return block + next_b
-                else:
-                    print "No saved block found"
-                br_counter=br_counter+1
+        if block_counter < br_counter:
+            block_counter = br_counter
     else:
         print "Counter not in query"
-    return getNext()
+        br_counter = block_counter
+            
+    # Check block file
+    block_fname = blockFileName(session, br_counter)
+    if os.path.isfile(block_fname):
+        print "-Reading block file " + block_fname
+        block_f = open(block_fname,'r')
+        block = block_f.read()
+        block_f.close()
+        return block
+    else:
+        print "No saved block found"    
+    return getNext(br_counter)
 
 @webint.route('/static/<filepath:path>')
 def serv_static(filepath):

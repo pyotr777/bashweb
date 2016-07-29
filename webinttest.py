@@ -12,7 +12,6 @@ import re
 import string
 import urllib
 import os
-import stat
 import glob
 import sys
 import json
@@ -119,10 +118,12 @@ def attach_session(session):
         br_counter = 1
         last_block = False
         block_fname = blockFileName(session, br_counter)
-        if os.path.isfile(block_fname):
-            # Deactivate index.html (prevent loading next block again)
-            page = re.sub(r'var\s*active\s*=\s*1[;]*',r'var active = 0;', page)
-            # Deactivate only if there is at least one block saved
+        # COMMENTED OUT because added active=0 assignment in final script attached to page. 
+        # See end of this function.
+        # if os.path.isfile(block_fname):
+        #     # Deactivate index.html (prevent loading next block again)
+        #     page = re.sub(r'var\s*active\s*=\s*1[;]*',r'var active = 0;', page)
+        #     # Deactivate only if there is at least one block saved
         while (os.path.isfile(block_fname) and not last_block):
             print "-["+str(pid)+"]Reading block " + block_fname
             block_f = open(block_fname,'r')
@@ -159,6 +160,7 @@ def attach_session(session):
             print "-["+str(pid)+"]BC updated to " + str(block_counter)
         print "-["+str(pid)+"]Set block_counter in browser to " + str(br_counter)        
         page = page + "\n<script>block_counter = "+str(br_counter)+";\n"
+        page = page + "\nactive = 0;\n" # Deactivate index.html - prevent loading next block again
         page = page + "\nconsole.log(\"BC=\"+block_counter);</script>\n"
         return page
 
@@ -208,16 +210,16 @@ def start_session():
     global block_counter
     global session
     block_counter = 0
-    page = "["+str(pid)+"]start_session.html"
+    page = "start_session.html"
     print "["+str(pid)+"]Block counter reset to " + str(block_counter)
     file_name = web_folder+"/" + page
     print "["+str(pid)+"]Reading " + file_name
     # Default DIV block transformations
     start_file = open(file_name)
     block = start_file.read()
-    # Replace default IDs with block unique IDs
-    block = re.sub(r'SESSION',session,block)
     start_file.close()
+    # Replace default IDs with block unique IDs
+    block = re.sub(r'SESSION',session,block)    
     return block
 
 def show_index():
@@ -443,6 +445,7 @@ def handleProcessOutput(proc, ws, counter):
 # Add / replace parts of XML file
 @webint.post('/xml/edit/<command_n>')
 def edit_xml(command_n):
+    print "["+str(pid)+"]edit_xml called with " + command_n
     next_block=getNext()
     out = StringIO.StringIO()
     err = StringIO.StringIO()

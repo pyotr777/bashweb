@@ -47,23 +47,6 @@
       setTimeout(function(){ exec_flag=1;}, 500)
     }
 
-    function gotData(data,n) {
-      console.log('Server: ' + data);
-      // Check if we have new block
-      if (data.indexOf(next_block_key)==0) {
-        data = data.replace(next_block_key,"")
-        $("body").append(data)
-      } else if (data.indexOf(stderr_key)==0) {
-        data = data.replace(stderr_key,"")
-        $("#out"+n).append("<div class=stderr>"+data+"</div>");
-        $("#out"+n).animate({ scrollTop: $('#out'+n).prop("scrollHeight")}, 10);
-      } else {
-        data = escape(data);
-        $("#out"+n).append("<div class=output>"+data+"</div>");
-        $("#out"+n).animate({ scrollTop: $('#out'+n).prop("scrollHeight")}, 10);
-      }
-    }
-
     function ExecOnServer(DNS, command, n) {
       console.log("Call to ExecOnServer with "+DNS+", "+command+", "+n)
       connection = new WebSocket('ws://'+DNS+'/exe?counter='+block_counter, ['soap', 'xmpp']);
@@ -87,6 +70,25 @@
         console.log("Connection closed with code "+ e.code +" : " + e.reason);
       }
     }
+
+
+    function gotData(data,n) {
+      console.log('Server: ' + data);
+      // Check if we have new block
+      if (data.indexOf(next_block_key)==0) {
+        data = data.replace(next_block_key,"")
+        $("body").append(data)
+      } else if (data.indexOf(stderr_key)==0) {
+        data = data.replace(stderr_key,"")
+        $("#out"+n).append("<div class=stderr>"+data+"</div>");
+        $("#out"+n).animate({ scrollTop: $('#out'+n).prop("scrollHeight")}, 10);
+      } else {
+        data = escape(data);
+        $("#out"+n).append("<div class=output>"+data+"</div>");
+        $("#out"+n).animate({ scrollTop: $('#out'+n).prop("scrollHeight")}, 10);
+      }
+    }
+
 
     // TODO: Works only for WS. For session (fastforward) not executed.
     function escape(str) {

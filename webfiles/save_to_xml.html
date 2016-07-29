@@ -34,7 +34,7 @@ function post_form() {
     // Select all <input type="text"> tags
     $(":text").each(function(index) {
         var id = $(this).attr('id');
-        console.log("Checking "+id)
+        //console.log("Checking "+id)
         res = id.match(/_NNN$/);
         if (res != null) {
           //console.log("Found " + res)
