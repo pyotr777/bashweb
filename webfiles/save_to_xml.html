@@ -5,7 +5,7 @@
     <input id="txt2_NNN" type="text" name="/configuration/oauth20/clientid"  size="70"/><br>
     Google API redirect URL:
     <input id="txt3_NNN" type="text" name="/configuration/oauth20/redirect"  size="70"/>
-    <button class="hidden_button" id="exec_button_NNN" onclick="post_form()">exec</button>
+    <button class="hidden_button" id="exec_button_NNN" onclick="post_form(NNN)">exec</button>
     <div id="div_NNN" class="displayblock"></div>
 </div>
 <script>
@@ -19,43 +19,11 @@ function init_block() {
     $("#txt1_NNN").focus();
 }
 
-// Get command from textfield #txt_NNN 
-function post_form() {
-    if (submittable) {
-        submittable = false;
-    } else {
-        return false;
-    }
-
-    var URL = "/xml/edit/COMMAND"; // This should be interpreted as direction to edit XML on server side.
-    console.log("Calling "+ URL)
-    
-    var formData = {};
-    // Select all <input type="text"> tags
-    $(":text").each(function(index) {
-        var id = $(this).attr('id');
-        //console.log("Checking "+id)
-        res = id.match(/_NNN$/);
-        if (res != null) {
-          //console.log("Found " + res)
-          formData[$(this).attr("name")] = $(this).val();
-        }
-    });
-    console.log(formData)
-
-    $.post(URL, formData, function(data) {      
-      parseData(data, NNN);
-    });
-
-    return false;
-}
-
 // Parse data from server in JSON format
 // JSON objects should be:
 // stdout, strerr, next
 function parseData(data, n) {
-  console.log("Call got data with " + NNN);
-  console.log(data);
+  console.log("Call parse data with " + NNN);
   var obj = JSON.parse(data);
   $("#out"+n).append("<div class=output>"+obj.stdout+"</div>");
   $("#out"+n).animate({ scrollTop: $('#out1').prop("scrollHeight")}, 10);

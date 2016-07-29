@@ -40,6 +40,7 @@
       command = $("#txt_"+n).val();
       console.log("Executing command "+command);
       console.log("DNS="+DNS);
+      console.log("Disable button #exec_button_" + n)
       // Disable button
       $("#exec_button_"+n).prop( "disabled", true );
       // Send the command to the server
@@ -47,10 +48,63 @@
       setTimeout(function(){ exec_flag=1;}, 500)
     }
 
+
+    // Called from blocks save_to_xml on [exec] command click.
+    function post_form(n) {
+      if (submittable) {
+          submittable = false;
+      } else {
+          return false;
+      }
+
+      var PATH = "/xml/edit/"+n; // This should be interpreted as direction to edit XML on server   side.
+      console.log("Calling "+ PATH)
+      console.log("Disable button #exec_button_" + n)
+      // Disable button
+      $("#exec_button_"+n).prop( "disabled", true );
+
+      var formData = {};
+      // Select all <input type="text"> tags
+      $(":text").each(function(index) {
+        var id = $(this).attr('id');
+        //console.log("Checking "+id)
+        var patrn = new RegExp("_"+n+"$");
+
+        // Debug block
+        // var teststr1 = "abc_"+n; // This string should match
+        // var teststr2 = "abc_"+n+"0"; // This string shouldnt match
+        // if (teststr1.match(patrn)) {
+        //   console.log("Matching 1 OK")
+        // } else {
+        //   console.log("Matching for " + teststr1 + " didnt work")
+        // }
+        // if (teststr2.match(patrn)) {
+        //   console.log("False match of " + teststr2)
+        // } else {
+        //   console.log("Matching 2 OK")
+        // }
+        // res = id.match(/_NNN$/);
+        res = id.match(patrn);
+        if (res != null) {
+          console.log("Found " + res)
+          formData[$(this).attr("name")] = $(this).val();
+        } 
+        // else {
+        //   console.log(id + " didnt match ")
+        // }
+      });
+      console.log(formData)
+
+      $.post(PATH, formData, function(data) {
+        parseData(data, n);
+      });
+
+      return false;
+    }
+
     function ExecOnServer(DNS, command, n) {
       console.log("Call to ExecOnServer with "+DNS+", "+command+", "+n)
       connection = new WebSocket('ws://'+DNS+'/exe?counter='+block_counter, ['soap', 'xmpp']);
-      block_counter++;
       // When the connection is open, send some data to the server
       connection.onopen = function () {
         connection.send(command); // Send the command to the server
@@ -73,7 +127,7 @@
 
 
     function gotData(data,n) {
-      console.log('Server: ' + data);
+      //console.log('Server: ' + data);
       // Check if we have new block
       if (data.indexOf(next_block_key)==0) {
         data = data.replace(next_block_key,"")
@@ -101,19 +155,6 @@
       str = str.replace("[m", "</span>");
       return str
     }
-
-    $(document).ready(function(){
-      if (active) {
-        DNS=window.location.hostname +":"+ location.port
-        console.log("Connecting to /next?counter="+block_counter)
-        $("body").append($("<div>").load("/next?counter="+block_counter));
-        block_counter++;
-      } else {
-        console.log("index.html not active.");
-      }
-      // console.log("w.l.hr: "+window.location.href);  w.l.hr: http://kportal.ml:8080/
-      // console.log("w.l.ht+p: "+window.location.hostname +":"+ location.port);  w.l.ht+p: kportal.ml:8080
-    });
 
   </script>
 </head>
