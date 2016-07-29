@@ -93,13 +93,24 @@
         //   console.log(id + " didnt match ")
         // }
       });
-      console.log(formData)
-
+      console.log(formData);
       $.post(PATH, formData, function(data) {
         parseData(data, n);
       });
-
       return false;
+    }
+
+    // Parse data from server in JSON format
+    // JSON objects should be:
+    // stdout, strerr, next
+    function parseData(data, n) {
+      console.log("Call parse data with " + n);
+      console.log("Raw data: "+data);
+      var obj = JSON.parse(data);
+      $("#out"+n).append("<div class=output>"+obj.stdout+"</div>");
+      $("#out"+n).animate({ scrollTop: $('#out1').prop("scrollHeight")}, 10);
+      $("#out"+n).append("<div class=stderr>"+obj.stderr+"</div>");
+      $("body").append(obj.next);
     }
 
     function ExecOnServer(DNS, command, n) {
@@ -137,7 +148,7 @@
         $("#out"+n).append("<div class=stderr>"+data+"</div>");
         $("#out"+n).animate({ scrollTop: $('#out'+n).prop("scrollHeight")}, 10);
       } else {
-        data = escape(data);
+        //data = escape(data);
         $("#out"+n).append("<div class=output>"+data+"</div>");
         $("#out"+n).animate({ scrollTop: $('#out'+n).prop("scrollHeight")}, 10);
       }

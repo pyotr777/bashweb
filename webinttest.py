@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.5alpha-1"
+ver = "0.5alpha-2"
 
 import bottle
 import subprocess
@@ -377,9 +377,9 @@ def edit_xml(command_n):
         err.close()
         return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1)})
 
-    new_xml = html_safe(frd.read())
+    new_xml = frd.read()
     frd.close()
-    print >> out, new_xml
+    print >> out, html_safe(new_xml)
 
     # Open output file
     outfilename = os.path.join(sessionDir(session),"output_" + str(counter) + ".txt")
@@ -444,7 +444,7 @@ def handleProcessOutput(proc, ws, counter):
         output_file_handler = openOutputFile(outfilename)
         if WS_alive:
             try:
-                ws.send(line)
+                ws.send(html_safe(line))
             except WebSocketError as ex:
                 print "Web socket died."
                 WS_alive = False;
@@ -627,19 +627,24 @@ def parseCommand(msg):
     return command,counter
 
 # HTML-sanitation
-s = 4
+s = 8
 esc_pairs = [[None] * 2 for y in range(s)]
+# Replacemnt pairs
+# ! Order is important !
 esc_pairs[0] = ['\\','\\\\']
-esc_pairs[1] = ['"','&quot;']
-esc_pairs[2] = ['<','&lt;']
-esc_pairs[3] = ['>','&gt;']
-#esc_pairs[4] = ['\n',r'\n']
+esc_pairs[1] = ['&','&amp;']
+esc_pairs[2] = ['"','&quot;']
+esc_pairs[3] = ['<','&lt;']
+esc_pairs[4] = ['>','&gt;']
+esc_pairs[5] = ['\'','&#039;']
+esc_pairs[6] = ["[38;5;70m", "<span style=\"color:#32b50a;\">"]
+esc_pairs[7] = ["[m", "</span>"]
 
 # Replace symbols that can distroy html test field contents.
-def html_safe(command):
+def html_safe(data):
     for esc in esc_pairs:
-        command = command.replace(esc[0],esc[1])
-    return command
+        data = data.replace(esc[0],esc[1])
+    return data
 
 
 # Shutdown server

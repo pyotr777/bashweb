@@ -19,17 +19,6 @@ function init_block() {
     $("#txt1_NNN").focus();
 }
 
-// Parse data from server in JSON format
-// JSON objects should be:
-// stdout, strerr, next
-function parseData(data, n) {
-  console.log("Call parse data with " + NNN);
-  var obj = JSON.parse(data);
-  $("#out"+n).append("<div class=output>"+obj.stdout+"</div>");
-  $("#out"+n).animate({ scrollTop: $('#out1').prop("scrollHeight")}, 10);
-  $("#out"+n).append("<div class=stderr>"+obj.stderr+"</div>");
-  $("body").append(obj.next)
-}
 init_block();
 </script>
 <div class="displayblock" id="outNNN"></div>
