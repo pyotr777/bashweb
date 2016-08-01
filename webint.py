@@ -435,8 +435,8 @@ def handleProcessOutput(proc, ws, counter):
     RFF_h.close()
     # Display lines in batches
     # After batch_size lines make a short pause to enable multiple requests processing
-    batch_size = 10  # Number of lines to read before pause.
-    sleep_time = 0.1 # Pause length in seconds.
+    batch_size = 20  # Number of lines to read before pause.
+    sleep_time = 0.05 # Pause length in seconds.
     line_counter = 0
     # Loop with running process output
     for line in iter(proc.stdout.readline, b''):
