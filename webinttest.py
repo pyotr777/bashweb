@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.5alpha-3"
+ver = "0.5alpha-5"
 
 import bottle
 import subprocess
@@ -287,17 +287,19 @@ def readoutput():
             return out
         print "No run flag"
 
-    # Script to sopt continous reloading
+    # Script to stop continous reloading
     stop_script='''<script>
         active_refresh = 0;
         console.log("Acitve refresh var="+active_refresh);
         console.log("Load next="+load_next);
         if (load_next) {
             console.log("Loading next block '''+session+" "+str(counter+1)+'''");
-            $("body").append($("<div>").load("/next?session='''+session+"&counter="+str(counter+1)+'''"));
+            $("body").append($("<div>").load("/next?counter='''+str(counter+1)+'''"));
             load_next = 0; // prevent multiple loads of same block
         }
         </script>'''
+    print "Append stop_script:"
+    print stop_script
     out = out + stop_script
     return out
 # End def readoutput()
@@ -522,7 +524,7 @@ def getNext(counter=None, result=""):
         if os.path.isfile(output_fname):
             read_next_block = True  # Get next block if output is saved fully (no run flag)
             print "-["+str(pid)+"]Reading ouput "+ output_fname
-            output = "<div class=\"displayblock\" id="+session+"_"+str(counter)+">" + readOutputFile(output_fname) + "</div>\n"
+            output = "<div class=displayblock id=out" + str(counter) + ">" + readOutputFile(output_fname) + "</div>\n"
             # Check if this step is in progress (subprocess hasn't finished)
             # If process is in progress, attach refresh script
             run_flag = output_fname + "_"
@@ -575,15 +577,18 @@ def RefreshScript(session, counter):
         var load_next = 1;   // Load next block when output loaded to the end.
         function refreshDiv() {
             if (active_refresh) {
-                console.log("Refresh script is running with active_refres=" + active_refresh)
                 console.log("Requesting /readoutput?session='''+session+"&block="+counter+'''");
-                $("#'''+session+"_"+counter+'''").load("/readoutput?session='''+session+"&block=" + counter + '''");
-                $("#'''+session+"_"+counter+'''").animate({ scrollTop: $("'''+session+"_" + counter +'''").prop("scrollHeight")}, 100);
-                setTimeout( refreshDiv, 1000);
+                $("#out'''+counter+'''").load("/readoutput?session='''+session+"&block=" + counter + '''", function() {
+                    this.scrollTop = this.scrollHeight;
+                    if (active_refresh) {
+                        setTimeout( refreshDiv, 2000);
+                        console.log("Output updated. Refreshing in 2 sec.");
+                    }
+                });                
             }
-            console.log("Refreshing in 2s: "+active_refresh)
         };
         if (active_refresh) {
+            console.log("Refreshing in 2s - "+active_refresh);
             setTimeout( refreshDiv, 2000);
         }
         </script>'''

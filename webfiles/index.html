@@ -92,6 +92,14 @@
     function parseData(data, n) {
       console.log("Call parse data with " + n);
       console.log("Raw data: "+data);
+
+      // Create #outNNN div if necessary
+      var div_id="out"+n;
+      div = document.getElementById(div_id);
+      if (div === null) {
+        $("body").append("<div class=displayblock id="+div_id+"></div>")
+      }
+
       var obj = JSON.parse(data);
       $("#out"+n).append("<div class=output>"+obj.stdout+"</div>");
       $("#out"+n).animate({ scrollTop: $('#out'+n).prop("scrollHeight")}, 10);
@@ -125,19 +133,30 @@
 
 
     function gotData(data,n) {
-      //console.log('Server: ' + data);
+      console.log('gotData: ' + data);
+
       // Check if we have new block
       if (data.indexOf(next_block_key)==0) {
-        data = data.replace(next_block_key,"")
-        $("body").append(data)
+        data = data.replace(next_block_key,"");
+        $("body").append(data);
         window.scrollTo(0,document.body.scrollHeight);
-      } else if (data.indexOf(stderr_key)==0) {
+        return;
+      }
+
+      // Create #outNNN div if necessary
+      var div_id="out"+n;
+      div = document.getElementById(div_id);
+      if (div === null) {
+        $("body").append("<div class=displayblock id="+div_id+"></div>")
+      }
+
+      if (data.indexOf(stderr_key)==0) {
         data = data.replace(stderr_key,"")
         $("#out"+n).append("<div class=stderr>"+data+"</div>");
         $("#out"+n).scrollTop($('#out'+n).prop("scrollHeight"));
       } else {
         //data = escape(data);
-        $("#out"+n).append("<div class=output>"+data+"</div>");
+        $("#out"+n).append(data);
         $("#out"+n).scrollTop($('#out'+n).prop("scrollHeight"));
       }
     }
