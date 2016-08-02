@@ -36,7 +36,7 @@
         console.log("Exec Flag is off");
         return;
       }
-      exec_flag=0;
+      //exec_flag=0;
       console.log("Call to exec with n="+n);
       command = $("#txt_"+n).val();
       console.log("Executing command "+command);
@@ -46,7 +46,7 @@
       $("#exec_button_"+n).prop( "disabled", true );
       // Send the command to the server
       ExecOnServer(DNS, command, n);
-      setTimeout(function(){ exec_flag=1;}, 500)
+      //setTimeout(function(){ exec_flag=1;}, 100)
     }
 
 
@@ -70,21 +70,6 @@
         var id = $(this).attr('id');
         //console.log("Checking "+id)
         var patrn = new RegExp("_"+n+"$");
-
-        // Debug block
-        // var teststr1 = "abc_"+n; // This string should match
-        // var teststr2 = "abc_"+n+"0"; // This string shouldnt match
-        // if (teststr1.match(patrn)) {
-        //   console.log("Matching 1 OK")
-        // } else {
-        //   console.log("Matching for " + teststr1 + " didnt work")
-        // }
-        // if (teststr2.match(patrn)) {
-        //   console.log("False match of " + teststr2)
-        // } else {
-        //   console.log("Matching 2 OK")
-        // }
-        // res = id.match(/_NNN$/);
         res = id.match(patrn);
         if (res != null) {
           console.log("Found " + res)
@@ -109,9 +94,10 @@
       console.log("Raw data: "+data);
       var obj = JSON.parse(data);
       $("#out"+n).append("<div class=output>"+obj.stdout+"</div>");
-      $("#out"+n).animate({ scrollTop: $('#out1').prop("scrollHeight")}, 10);
+      $("#out"+n).animate({ scrollTop: $('#out'+n).prop("scrollHeight")}, 10);
       $("#out"+n).append("<div class=stderr>"+obj.stderr+"</div>");
       $("body").append(obj.next);
+      window.scrollTo(0,document.body.scrollHeight);
     }
 
     function ExecOnServer(DNS, command, n) {
@@ -144,14 +130,15 @@
       if (data.indexOf(next_block_key)==0) {
         data = data.replace(next_block_key,"")
         $("body").append(data)
+        window.scrollTo(0,document.body.scrollHeight);
       } else if (data.indexOf(stderr_key)==0) {
         data = data.replace(stderr_key,"")
         $("#out"+n).append("<div class=stderr>"+data+"</div>");
-        $("#out"+n).animate({ scrollTop: $('#out'+n).prop("scrollHeight")}, 10);
+        $("#out"+n).scrollTop($('#out'+n).prop("scrollHeight"));
       } else {
         //data = escape(data);
         $("#out"+n).append("<div class=output>"+data+"</div>");
-        $("#out"+n).animate({ scrollTop: $('#out'+n).prop("scrollHeight")}, 10);
+        $("#out"+n).scrollTop($('#out'+n).prop("scrollHeight"));
       }
     }
 
@@ -171,6 +158,6 @@
   </script>
 </head>
 <body>
-<h1 id="start">Test</h1>
+<h1 id="start">K-portal installation</h1>
 
 </body>

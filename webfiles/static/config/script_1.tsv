@@ -5,3 +5,4 @@ save_to_xml.html	/etc/kportal/www/config.xml	Edit kp_server configuration file
 command_block.html	sudo -E su kportal -c "kp_server.sh 9004 -tls"	Start kp_server
 command_block.html	start_server.sh	Check that Docker is running
 command_block.html	/home/ubuntu/kportal/start_apache.sh 9005	Check that Apache is running
+redirect_block.html	shutdown	port 9005

@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.5alpha-2"
+ver = "0.5alpha-3"
 
 import bottle
 import subprocess
@@ -230,6 +230,10 @@ def exe(ws):
         print "Next block sent"
         return
 
+    if command == "shutdown":
+        print "Got shutdown command."
+        shutdown()
+
     init_env = os.environ.copy()
     merged_env = init_env.copy()
     merged_env.update(env_vars)
@@ -450,9 +454,8 @@ def handleProcessOutput(proc, ws, counter):
             except WebSocketError as ex:
                 print "Web socket died."
                 WS_alive = False;
-        # print line,
+        print line,
         print >> output_file_handler, line,
-        print line
         parse_vars(line)
         line_counter+=1
         if line_counter >= batch_size:
@@ -545,7 +548,7 @@ def getNext(counter=None, result=""):
         div_block_h.close()
         # Replace default IDs with block unique IDs
         div = re.sub(r'NNN',str(counter),div)
-        # And command
+        # And command  - use counter instead of command intself for rsecurity reasons.
         div = re.sub(r'COMMAND',str(counter),div)
         # Discription
         div = re.sub(r'DISCRIPTION',descript_list[counter-1],div)

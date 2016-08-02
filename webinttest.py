@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.5alpha-2"
+ver = "0.5alpha-3"
 
 import bottle
 import subprocess
@@ -136,7 +136,9 @@ def readOutputFile(fname):
     print "["+str(pid)+"] No write flag file"
     output_f = open(fname,'r')
     output = output_f.read()
-    output = html_safe(output)
+    output = html_safe(output.decode('utf-8')) 
+    # .decode(utf-8) to fix UnicodeDecodeError: 'ascii' codec can't decode byte 0xe2 in position 954875: ordinal not in range(128) error.
+
     output_f.close()
     return output
 
@@ -201,6 +203,7 @@ def exe(ws):
         print "Next block sent"
         return
 
+    print "Parcing message "+msg
     command,counter = parseCommand(msg)
     if counter is None or int(counter) is None:
         print "Error: no counter in message to WS: " + msg
@@ -227,6 +230,10 @@ def exe(ws):
         ws.send("#NEXT"+next_block)
         print "Next block sent"
         return
+
+    if command == "shutdown":
+        print "Got shutdown command."
+        shutdown()
 
     init_env = os.environ.copy()
     merged_env = init_env.copy()
@@ -435,8 +442,8 @@ def handleProcessOutput(proc, ws, counter):
     RFF_h.close()
     # Display lines in batches
     # After batch_size lines make a short pause to enable multiple requests processing
-    batch_size = 10  # Number of lines to read before pause.
-    sleep_time = 0.1 # Pause length in seconds.
+    batch_size = 20  # Number of lines to read before pause.
+    sleep_time = 0.05 # Pause length in seconds.
     line_counter = 0
     # Loop with running process output
     for line in iter(proc.stdout.readline, b''):
@@ -448,7 +455,7 @@ def handleProcessOutput(proc, ws, counter):
             except WebSocketError as ex:
                 print "Web socket died."
                 WS_alive = False;
-        # print line,
+        print line,
         print >> output_file_handler, line,
         parse_vars(line)
         line_counter+=1
@@ -542,7 +549,7 @@ def getNext(counter=None, result=""):
         div_block_h.close()
         # Replace default IDs with block unique IDs
         div = re.sub(r'NNN',str(counter),div)
-        # And command
+        # And command  - use counter instead of command intself for rsecurity reasons.
         div = re.sub(r'COMMAND',str(counter),div)
         # Discription
         div = re.sub(r'DISCRIPTION',descript_list[counter-1],div)
@@ -656,7 +663,7 @@ def shutdown():
     shutil.rmtree(sessionDir(session))
     pid = os.getpid()
     print "PID\t"+str(pid)
-    ps = subprocess.check_output(["ps","ax",str(pid)])
+    ps = subprocess.check_output(["ps","-p",str(pid)])
     print ps
     subprocess.check_call(["kill",str(pid)])
 
