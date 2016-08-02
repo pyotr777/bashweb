@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.5alpha-3"
+ver = "0.5alpha-4"
 
 import bottle
 import subprocess
@@ -286,7 +286,7 @@ def readoutput():
             return out
         print "No run flag"
 
-    # Script to sopt continous reloading
+    # Script to stop continous reloading
     stop_script='''<script>
         active_refresh = 0;
         console.log("Acitve refresh var="+active_refresh);
@@ -576,9 +576,10 @@ def RefreshScript(session, counter):
             if (active_refresh) {
                 console.log("Refresh script is running with active_refres=" + active_refresh)
                 console.log("Requesting /readoutput?session='''+session+"&block="+counter+'''");
-                $("#'''+session+"_"+counter+'''").load("/readoutput?session='''+session+"&block=" + counter + '''");
-                $("#'''+session+"_"+counter+'''").animate({ scrollTop: $("'''+session+"_" + counter +'''").prop("scrollHeight")}, 100);
-                setTimeout( refreshDiv, 1000);
+                $("#'''+session+"_"+counter+'''").load("/readoutput?session='''+session+"&block=" + counter + '''", function() {
+                    this.scrollTop(this.scrollHeight);
+                });                
+                setTimeout( refreshDiv, 2000);
             }
             console.log("Refreshing in 2s: "+active_refresh)
         };
