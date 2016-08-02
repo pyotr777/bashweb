@@ -136,7 +136,9 @@ def readOutputFile(fname):
     print "["+str(pid)+"] No write flag file"
     output_f = open(fname,'r')
     output = output_f.read()
-    output = html_safe(output)
+    output = html_safe(output.decode('utf-8')) 
+    # .decode(utf-8) to fix UnicodeDecodeError: 'ascii' codec can't decode byte 0xe2 in position 954875: ordinal not in range(128) error.
+
     output_f.close()
     return output
 
@@ -450,6 +452,7 @@ def handleProcessOutput(proc, ws, counter):
                 WS_alive = False;
         # print line,
         print >> output_file_handler, line,
+        print line
         parse_vars(line)
         line_counter+=1
         if line_counter >= batch_size:
@@ -656,7 +659,7 @@ def shutdown():
     shutil.rmtree(sessionDir(session))
     pid = os.getpid()
     print "PID\t"+str(pid)
-    ps = subprocess.check_output(["ps","ax",str(pid)])
+    ps = subprocess.check_output(["ps","-p",str(pid)])
     print ps
     subprocess.check_call(["kill",str(pid)])
 
