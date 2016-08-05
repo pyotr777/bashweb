@@ -7,10 +7,11 @@ for i in {1..100}; do
     sleep 0.01
 done
 sleep 1
-for i in {1..17}; do
-    echo "test $1"
-    echo "I=$i"
-    echo "err" 1>&2
-    sleep 0.1
-done
+echo "TERM $TERM"
+echo "SHELL $SHELL"
+echo "CC $CLICOLOR"
+export CLICOLOR_FORCE=1
+echo "CC_F $CLICOLOR_FORCE"
+
+ls
 

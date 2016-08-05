@@ -1,8 +1,6 @@
 envvars_block.html	#SETVARS	Set environnment vars
-command_block.html	env | grep "KP_"	Check KP_* envvars
-command_block.html	./test_long.sh 3	Start long installation (step 3)
-command_block.html	env | grep "KP_"	Check KP_* envvars
 save_to_xml.html	../config.xml	Edit kp_server configuration file
-command_block.html	./disp.sh	Display test (step 5)
+command_block.html	./disp.sh	Display test
+command_block.html	./colortest.sh	Color test
 command_block.html	env | grep "KP_"	Check KP_* envvars
-redirect_block.html	shutdown	port 9005
+command_block.html	./test_long.sh 3	Longrun
