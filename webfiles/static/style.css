@@ -25,6 +25,29 @@ div.displayblock {
     overflow-y:visible;
 }
 
+
+a.restart {
+    display: block;
+    float: right;
+    -webkit-border-radius: 5;
+    -moz-border-radius: 5;
+    border-radius: 5px;
+    font-family: Arial;
+    color: #fffaff;
+    font-size: 16px;
+    background: #ff94a2;
+    padding: 4px 7px 4px 7px;
+    text-decoration: none;
+    position:relative;
+    top: -50px;
+}
+
+a.restart:hover {
+  background: #ff0000;
+  text-decoration: none;
+}
+
+
 .stderr {
     color: red;
 }
