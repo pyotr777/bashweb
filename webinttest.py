@@ -22,6 +22,8 @@ import gevent.queue
 import gevent
 from bottle.ext.websocket import GeventWebSocketServer
 from bottle.ext.websocket import websocket
+from geventwebsocket.websocket import WebSocketError
+from ansi2html import Ansi2HTMLConverter
 import csv
 import random
 from string import ascii_uppercase, digits
@@ -638,24 +640,13 @@ def parseCommand(msg):
         command = command_list[counter - 1]
     return command,counter
 
-# HTML-sanitation
-s = 8
-esc_pairs = [[None] * 2 for y in range(s)]
-# Replacemnt pairs
-# ! Order is important !
-esc_pairs[0] = ['\\','\\\\']
-esc_pairs[1] = ['&','&amp;']
-esc_pairs[2] = ['"','&quot;']
-esc_pairs[3] = ['<','&lt;']
-esc_pairs[4] = ['>','&gt;']
-esc_pairs[5] = ['\'','&#039;']
-esc_pairs[6] = ["[38;5;70m", "<span style=\"color:#32b50a;\">"]
-esc_pairs[7] = ["[m", "</span>"]
 
-# Replace symbols that can distroy html test field contents.
+# HTML-sanitation
+conv = Ansi2HTMLConverter(inline=True)
+
+# Replace symbols that can distroy html in browser.
 def html_safe(data):
-    for esc in esc_pairs:
-        data = data.replace(esc[0],esc[1])
+    data = conv.convert(data,full=False)
     return data
 
 
