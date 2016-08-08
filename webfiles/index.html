@@ -40,8 +40,6 @@
       console.log("Call to exec with n="+n);
       command = $("#txt_"+n).val();
       console.log("Executing command "+command);
-      console.log("DNS="+DNS);
-      console.log("Disable button #exec_button_" + n)
       // Disable button
       $("#exec_button_"+n).prop( "disabled", true );
       // Send the command to the server
@@ -58,7 +56,7 @@
           return false;
       }
 
-      var PATH = "/xml/edit/"+n; // This should be interpreted as direction to edit XML on server   side.
+      var PATH = "/xml/edit/"+n; // This should be interpreted as direction to edit XML on server side.
       console.log("Calling "+ PATH)
       console.log("Disable button #exec_button_" + n)
       // Disable button
@@ -68,7 +66,7 @@
       // Select all <input type="text"> tags
       $(":text").each(function(index) {
         var id = $(this).attr('id');
-        //console.log("Checking "+id)
+        // select only tags with id ending with "_NNN"
         var patrn = new RegExp("_"+n+"$");
         res = id.match(patrn);
         if (res != null) {

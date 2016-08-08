@@ -4,9 +4,9 @@ for i in {1..100}; do
     echo "test $1"
     echo "I=$i"
     echo "err" 1>&2
-    sleep 0.01
+    sleep 0.1
 done
-sleep 1
+sleep 3
 echo "TERM $TERM"
 echo "SHELL $SHELL"
 echo "CC $CLICOLOR"

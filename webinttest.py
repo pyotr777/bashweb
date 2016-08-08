@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CIT Stair Lab
 
-ver = "0.5alpha-5"
+ver = "0.6alpha-1"
 
 import bottle
 import subprocess
@@ -219,10 +219,7 @@ def exe(ws):
         print "setvars"
         # Got command with variables in it
         # Save vars into env_vars and return
-        assignments = command.split(";")
-        print assignments
-        for assign in assignments:
-            parse_vars(assign)
+        parseVars(command)
         # Create output file 
         outfilename = outputFileName(session,counter)
         output_file_handler = open(outfilename,'w')
@@ -236,6 +233,7 @@ def exe(ws):
     if command == "shutdown":
         print "Got shutdown command."
         shutdown()
+        return
 
     init_env = os.environ.copy()
     merged_env = init_env.copy()
@@ -461,7 +459,6 @@ def handleProcessOutput(proc, ws, counter):
                 WS_alive = False;
         print line,
         print >> output_file_handler, line,
-        parse_vars(line)
         line_counter+=1
         if line_counter >= batch_size:
             closeOutputFile(output_file_handler)
@@ -618,23 +615,48 @@ def closeOutputFile(f_handle):
         os.remove(flag_filename)
 
 
-
-# Get envvars from output lines
-def parse_vars(str):
+# Get envvars from string in format:
+# #SETVARS:VAR1,...,VARn:{VARj=VALj;... }
+# After #SETVAR keyword follows comma-separated list of allowed variable,
+# followed by semicolon-separated list of variable assignment statements.
+# Add allowed assignment to env_vars.
+def parseVars(command):
     global env_vars
-    m = re.search("([\w/]+)=([\S]+)",str)
-    if m is not None and len(m.groups()) == 2:
-        env_vars[m.group(1)] = m.group(2)
+    print "Have command in parseVars: " + command
+    dollar_split=command.split("$")
+    allowed_vars=""
+    if len(dollar_split) > 2:
+        allowed_vars=dollar_split[1].split(",")
+        json_part=dollar_split[2]
+    else:
+        json_part=dollar_split[1]
+    if len(json_part) > 0:
+        print "Loading to JSON object:" + json_part
+        parsed_json = json.loads(json_part)
+        # Loop through parsed object attributes
+        for key, value in parsed_json.iteritems():
+            print "key:"+key + " val="+value
+            print len(allowed_vars)
+            if key in allowed_vars or len(allowed_vars) == 0:
+                print key + " OK"
+                env_vars[key] = value
 
 
-# Get command from message
-# If message contains ";", split it.
+
+    #m = re.search("([\w/]+)=([\S]+)",str)
+    #if m is not None and len(m.groups()) == 2:
+    #    env_vars[m.group(1)] = m.group(2)
+
+
+# Get command from message. Message should start with a number, maybe followed by "$" and arguments.
+# If message contains "$", use split to extract number.
 # First part should be integer number of command, second part - arguments for the command.
 def parseCommand(msg):
-    if msg.find(";") > 0:
-        parts = msg.split(";")
+    print "parseCommand "+ msg
+    if msg.find("$") > 0:
+        parts = msg.split("$")
         counter = int(parts[0])
-        command = command_list[counter - 1] + ";" + ";".join(parts[1:])
+        command = command_list[counter - 1] + "$" + "$".join(parts[1:])
     else:
         counter = int(msg)
         command = command_list[counter - 1]
