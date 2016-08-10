@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 #
 # Web interface for executing shell commands
-# 2016 (C) Bryzgalov Peter @ CIT Stair Lab
+# 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.6alpha-1"
+ver = "0.6alpha-3"
 
 import bottle
 import subprocess
@@ -239,6 +239,7 @@ def exe(ws):
     merged_env = init_env.copy()
     merged_env.update(env_vars)
     print "Exectuing "+command
+    print "Environment " + str(merged_env)
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=merged_env, bufsize=1, shell=True, executable="/bin/bash")
     handleProcessOutput(proc,ws,counter)  # Output save to file and sent to WS
 
@@ -635,7 +636,9 @@ def parseVars(command):
         parsed_json = json.loads(json_part)
         # Loop through parsed object attributes
         for key, value in parsed_json.iteritems():
-            print "key:"+key + " val="+value
+            key = str(key)  # Convert from Unicode
+            value = str(value)
+            print "key:"+key + " val="+ str(value)
             print len(allowed_vars)
             if key in allowed_vars or len(allowed_vars) == 0:
                 print key + " OK"
