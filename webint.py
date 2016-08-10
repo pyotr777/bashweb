@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 #
 # Web interface for executing shell commands
-# 2016 (C) Bryzgalov Peter @ CIT Stair Lab
+# 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.6alpha-1"
+ver = "0.6alpha-2"
 
 import bottle
 import subprocess
@@ -632,10 +632,10 @@ def parseVars(command):
         parsed_json = json.loads(json_part)
         # Loop through parsed object attributes
         for key, value in parsed_json.iteritems():
-            print "key:"+key + " val="+value
+            print "key:"+str(key) + " val="+ str(value)
             print len(allowed_vars)
             if key in allowed_vars or len(allowed_vars) == 0:
-                print key + " OK"
+                print str(key) + " OK"
                 env_vars[key] = value
 
 
