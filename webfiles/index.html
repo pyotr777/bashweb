@@ -19,12 +19,12 @@
     // If not set return "".
     function parseHrefSession() {
       var query_string = {};
-      var query = window.location.search.substring(1);
+      var query = decodeURIComponent(window.location.search.substring(1));
       var vars = query.split("&");
       for (var i=0;i<vars.length;i++) {
         var pair = vars[i].split("=");
         if (pair[0] == "session") {
-          return "?session="+pair[1]
+          return pair[1]
         }
       }
       return ""
@@ -56,7 +56,7 @@
           return false;
       }
 
-      var PATH = "/xml/edit/"+n; // This should be interpreted as direction to edit XML on server side.
+      var PATH = "/xml/edit/"+n+"?session="+SESSION; // This should be interpreted as direction to edit XML on server side.
       console.log("Calling "+ PATH)
       console.log("Disable button #exec_button_" + n)
       // Disable button
@@ -107,8 +107,8 @@
     }
 
     function ExecOnServer(DNS, command, n) {
-      console.log("Call to ExecOnServer with "+DNS+", "+command+", "+n)
-      connection = new WebSocket('ws://'+DNS+'/exe?counter='+block_counter, ['soap', 'xmpp']);
+      console.log("Call to ExecOnServer with "+DNS+", "+command+", "+n+", block_counter="+block_counter+", SESSION="+SESSION)
+      connection = new WebSocket('ws://'+DNS+'/exe?session='+SESSION+'&counter='+block_counter, ['soap', 'xmpp']);
       // When the connection is open, send some data to the server
       connection.onopen = function () {
         connection.send(command); // Send the command to the server
@@ -178,3 +178,4 @@
 <h1 id="start">K-portal installation</h1>
 <a href="/" class="restart">Restart session</a>
 </body>
+</html>

@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.6alpha-3"
+ver = "0.7alpha-2"
 
 import bottle
 import subprocess
@@ -51,11 +51,6 @@ block_counter = 0
 WS_alive = False
 pid = os.getpid()
 
-try:
-    session = os.environ["WEBINT_SESSION"]
-except:
-    session=""
-
 command_list=[]
 descript_list=[]
 block_list=[]
@@ -89,17 +84,23 @@ print block_list
 
 @webint.route('/')
 def start():
-    global session
-    if bottle.request.query is None or bottle.request.query.session is None or len(bottle.request.query.session)<1:
+    session = getSessionID(bottle.request)
+    if  session == "":
         session = ''.join([random.choice(ascii_uppercase + digits) for n in xrange(8)])
         print "["+str(pid)+"]SESSION\t"+session
-        return startSession()
+        return startSession(session)
     else:
-        session = bottle.request.query.session
         print "["+str(pid)+"]NEW CONNECTION TO SESSION "+ session
         return attachSession(session)
 
 
+def getSessionID(request):
+    # Read session ID
+    if request.query is None or request.query.session is None or len(request.query.session)<1:
+        print "No session parameter in request"
+        return ""
+    else:
+        return request.query.session
 def attachSession(session):
     global block_counter
     global static_folder
@@ -113,7 +114,7 @@ def attachSession(session):
     page = showIndex()
     print "["+str(pid)+"]Reading block files starting from 1"
     br_counter = 1
-    result = getNext(br_counter, page)
+    result = getNext(br_counter, page, session=session)
 
     # Set block counter in browser
     print "["+str(pid)+"]BC\t" + str(block_counter)
@@ -147,10 +148,12 @@ def readOutputFile(fname):
 
 # Send start_session.html to browser
 # which will reload to the same address now with ?session=... parameter.
-def startSession():
+def startSession(session):
     global block_counter
-    global session
+    global env_vars
     block_counter = 0
+    # Init env_vars for this session
+    env_vars[session] = dict()
     page = "start_session.html"
     print "["+str(pid)+"]Block counter reset to " + str(block_counter)
     file_name = web_folder+"/" + page
@@ -178,37 +181,40 @@ def showIndex():
 @webint.route('/next')
 def next():
     print "["+str(pid)+"]Loading next block"
+    session = getSessionID(bottle.request)    
     # Check browser block counter
     if hasattr(bottle.request.query, 'counter') and bottle.request.query.counter is not None:
         b_counter = bottle.request.query.counter
         print "Have browser counter " + b_counter
         counter = int(b_counter)
-        return getNext(counter,"")
+        return getNext(counter,"",session=session)
     else:
-        return getNext()
+        return getNext(session=session)
 
 
 @webint.route('/exe', apply=[websocket])
 def exe(ws):
-    global env_vars
     global WS_alive
-    global session
-
-    print "["+str(pid)+"]Session="+session
+    session = getSessionID(bottle.request)
+    if session != "":
+        print "["+str(pid)+"]Session="+session
+    else:
+        print "["+str(pid)+"]No session"
     WS_alive = True
     print "WEB SOCKET\talive"
     msg = ws.receive()
     if msg is None or len(msg) == 0:
         print "Error: Null command in /exe"
-        next_block=getNextNoCounter()
+        next_block=getNext(session=session)
         ws.send("#NEXT"+next_block)
         print "Next block sent"
         return
 
+    print "Parcing message "+msg
     command,counter = parseCommand(msg)
     if counter is None or int(counter) is None:
         print "Error: no counter in message to WS: " + msg
-        next_block=getNextNoCounter()
+        next_block=getNext(session=session)
         ws.send("#NEXT"+next_block)
         print "Next block sent"
         return
@@ -218,13 +224,13 @@ def exe(ws):
         print "setvars"
         # Got command with variables in it
         # Save vars into env_vars and return
-        parseVars(command)
+        parseVars(command,session)
         # Create output file 
         outfilename = outputFileName(session,counter)
         output_file_handler = open(outfilename,'w')
-        print "SERVARS output saved to " + outfilename
+        print "SETVARS output saved to " + outfilename
         output_file_handler.close()
-        next_block=getNext(counter+1,"")
+        next_block=getNext(counter+1, session=session)
         ws.send("#NEXT"+next_block)
         print "Next block sent"
         return
@@ -236,13 +242,14 @@ def exe(ws):
 
     init_env = os.environ.copy()
     merged_env = init_env.copy()
-    merged_env.update(env_vars)
+    merged_env.update(getEnvVars(session))
     print "Exectuing "+command
-    print "Environment " + str(merged_env)
+    #print "Environment " + str(merged_env)
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=merged_env, bufsize=1, shell=True, executable="/bin/bash")
-    handleProcessOutput(proc,ws,counter)  # Output save to file and sent to WS
+    if session != "":
+        handleProcessOutput(proc,ws,counter,session)  # Output save to file and sent to WS
 
-    next_block=getNext(counter+1,"")
+    next_block=getNext(counter+1, session=session)
     ws.send("#NEXT"+next_block)
     print "Next block sent"
     WS_alive = False
@@ -253,6 +260,16 @@ def exe(ws):
 # End def exe(ws)
 
 
+# Return dictionary with environment variables for given session.
+# Use top-level dictionary "nosession" if session is not given.
+def getEnvVars(session=""):
+    global env_vars
+
+    if session == "":
+        dict_name = "nosession"
+    else:
+        dict_name = session
+    return env_vars[dict_name]
 # Read output from step N of session S.
 # Called by refresh script in browser.
 # If process has finished (no running flag) return next block also.
@@ -260,11 +277,11 @@ def exe(ws):
 def readoutput():
     print "["+str(pid)+"]READ OUTPUT"
     # Read session ID
-    if bottle.request.query is None or bottle.request.query.session is None or len(bottle.request.query.session)<1:
+    session = getSessionID(bottle.request)
+    if session == "":
         print "No session parameter in request"
         return ""
     else:
-        session = bottle.request.query.session
         print "have session "+ session
     # Read counter
     if bottle.request.query.block is None or len(bottle.request.query.block) < 1:
@@ -307,6 +324,9 @@ def readoutput():
 @webint.post('/xml/edit/<command_n>')
 def edit_xml(command_n):
     print "["+str(pid)+"]edit_xml called with " + command_n
+    session = getSessionID(bottle.request)
+    if session != "":
+        print "Session="+session
     out = StringIO.StringIO()
     err = StringIO.StringIO()
     out.write('')
@@ -319,7 +339,7 @@ def edit_xml(command_n):
         stderr = err.getvalue()
         out.close()
         err.close()
-        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1)})
+        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1, session=session)})
     print "["+str(pid)+"]Editing "+filepath
     # Open file
     if filepath.find("/") != 0:
@@ -333,7 +353,7 @@ def edit_xml(command_n):
         stderr = err.getvalue()
         out.close()
         err.close()
-        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1)})
+        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1, session=session)})
 
     keys = bottle.request.forms.keys()
     for key in keys:
@@ -348,7 +368,7 @@ def edit_xml(command_n):
             stderr = err.getvalue()
             out.close()
             err.close()
-            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1)})
+            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1, session=session)})
 
         except:
             print >> err, sys.exc_info()
@@ -357,7 +377,7 @@ def edit_xml(command_n):
             stderr = err.getvalue()
             out.close()
             err.close()
-            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1)})
+            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1, session=session)})
 
     print etree.tostring(f)
     # Save to file
@@ -369,7 +389,7 @@ def edit_xml(command_n):
         stderr = err.getvalue()
         out.close()
         err.close()
-        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1)})
+        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1, session=session)})
 
     print >> fwrt, etree.tostring(f)
     fwrt.close()
@@ -382,17 +402,18 @@ def edit_xml(command_n):
         stderr = err.getvalue()
         out.close()
         err.close()
-        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1)})
+        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1, session=session)})
 
     new_xml = frd.read()
     frd.close()
     print >> out, html_safe(new_xml)
 
-    # Open output file
-    outfilename = os.path.join(sessionDir(session),"output_" + str(counter) + ".txt")
-    output_file_handler = openOutputFile(outfilename)
-    print >> output_file_handler, new_xml,
-    closeOutputFile(output_file_handler)
+    if session != "":
+        # Open output file
+        outfilename = os.path.join(sessionDir(session),"output_" + str(counter) + ".txt")
+        output_file_handler = openOutputFile(outfilename)
+        print >> output_file_handler, new_xml,
+        closeOutputFile(output_file_handler)
 
     # Return stdout and stderr
     stdout = out.getvalue()
@@ -401,7 +422,7 @@ def edit_xml(command_n):
     out.close()
     err.close()
 
-    return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter + 1)})
+    return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter + 1, session=session)})
 # End def edit_xml(command_n)
 
 
@@ -429,9 +450,8 @@ def outputFileName(session,counter):
 
 # Process execution
 # Save output in output_NNN.txt file, send to web socket and to server stdout.
-def handleProcessOutput(proc, ws, counter):
+def handleProcessOutput(proc, ws, counter,session=""):
     global WS_alive
-    global session
     # Output file name
     outfilename = os.path.join(sessionDir(session),"output_" + str(counter) + ".txt")
     # Running flag file
@@ -471,21 +491,15 @@ def handleProcessOutput(proc, ws, counter):
     os.remove(RFF)
 
 
-# Return next block useing server-side BC
-def getNextNoCounter():
-    global block_counter
-    return(getNext(block_counter + 1),"")
-
-
 # Return block with number 'counter' and append it to 'result'.
 # If block is saved (in session folder) use saved version and 
 # also append saved output if exists.
 # ! This should be the only function that sets (alters) block_counter.
-def getNext(counter=None, result=""):
+def getNext(counter=None, result="", session=""):
     global block_counter
     global block_list
     global static_folder
-    global session
+    
     # Flag if we in FastForward mode and need next block
     read_next_block = False
     if counter is None:
@@ -499,59 +513,61 @@ def getNext(counter=None, result=""):
             print "block_counter shoud be equal to counter\t"+str(block_counter)+"\t" + str(counter)
             block_counter = counter
 
-    print "["+str(pid)+"]Get next ("+str(counter)+")"
+    print "["+str(pid)+"]Get next ("+str(counter)+") session="+session+"."
     print "BC\t" + str(block_counter)
     if counter > len(block_list):
         print "No more commands"
         return "OK"
 
-    # Check if block counter is saved
-    block_fname = blockFileName(session, counter)
-    # USe saved block
-    if os.path.isfile(block_fname):
-        print "["+str(pid)+"]Found saved block " + block_fname
-        block_f = open(block_fname,'r')
-        block = block_f.read()
-        block_f.close()
-        # Append saved block contents to result
-        result = result + block
-        # Check output file
-        output_fname = string.replace(block_fname,'block_','output_')
-        output_fname = string.replace(output_fname,'.html','.txt')
-        if os.path.isfile(output_fname):
-            read_next_block = True  # Get next block if output is saved fully (no run flag)
-            print "-["+str(pid)+"]Reading ouput "+ output_fname
-            output = "<div class=displayblock id=out" + str(counter) + ">" + readOutputFile(output_fname) + "</div>\n"
-            # Check if this step is in progress (subprocess hasn't finished)
-            # If process is in progress, attach refresh script
-            run_flag = output_fname + "_"
-            if os.path.isfile(run_flag):
-                print "-["+str(pid)+"]Run flag found: " + run_flag
-                read_next_block = False
-                refresh_script = RefreshScript(session, str(counter))
-                print "Attaching refresh script to putput"
-                output = output + refresh_script
-            # Append output to result
-            result = result + output
+    if session != "":
+        # Check if block counter is saved
+        block_fname = blockFileName(session, counter)
+        # USe saved block
+        if os.path.isfile(block_fname):
+            print "["+str(pid)+"]Found saved block " + block_fname
+            block_f = open(block_fname,'r')
+            block = block_f.read()
+            block_f.close()
+            # Append saved block contents to result
+            result = result + block
+            # Check output file
+            output_fname = string.replace(block_fname,'block_','output_')
+            output_fname = string.replace(output_fname,'.html','.txt')
+            if os.path.isfile(output_fname):
+                read_next_block = True  # Get next block if output is saved fully (no run flag)
+                print "-["+str(pid)+"]Reading ouput "+ output_fname
+                output = "<div class=displayblock id=out" + str(counter) + ">" + readOutputFile(output_fname) + "</div>\n"
+                # Check if this step is in progress (subprocess hasn't finished)
+                # If process is in progress, attach refresh script
+                run_flag = output_fname + "_"
+                if os.path.isfile(run_flag):
+                    print "-["+str(pid)+"]Run flag found: " + run_flag
+                    read_next_block = False
+                    refresh_script = RefreshScript(session, str(counter))
+                    print "Attaching refresh script to putput"
+                    output = output + refresh_script
+                # Append output to result
+                result = result + output
 
-        # Need next block
-        # ! INDENTION SHOULD BE SAME AS if os.path.isfile(output_fname):
-        if read_next_block:
-            result = getNext(counter+1,result)
+            # Need next block
+            # ! INDENTION SHOULD BE SAME AS if os.path.isfile(output_fname):
+            if read_next_block:
+                result = getNext(counter+1, result, session)
+            return result
 
     # Use raw block
-    else:
-        block_f = web_folder+"/" + block_list[counter-1]
-        print "["+str(pid)+"]Use raw block " + block_f
-        div_block_h = open(block_f)
-        div = div_block_h.read()
-        div_block_h.close()
-        # Replace default IDs with block unique IDs
-        div = re.sub(r'NNN',str(counter),div)
-        # And command  - use counter instead of command intself for rsecurity reasons.
-        div = re.sub(r'COMMAND',str(counter),div)
-        # Discription
-        div = re.sub(r'DISCRIPTION',descript_list[counter-1],div)
+    block_f = web_folder+"/" + block_list[counter-1]
+    print "["+str(pid)+"]Use raw block " + block_f
+    div_block_h = open(block_f)
+    div = div_block_h.read()
+    div_block_h.close()
+    # Replace default IDs with block unique IDs
+    div = re.sub(r'NNN',str(counter),div)
+    # And command  - use counter instead of command intself for rsecurity reasons.
+    div = re.sub(r'COMMAND',str(counter),div)
+    # Discription
+    div = re.sub(r'DISCRIPTION',descript_list[counter-1],div)
+    if session != "":
         # Save block to file blockNNN.html
         outfilename = os.path.join(sessionDir(session),"block_" + str(counter) + ".html")
         if not os.path.isfile(outfilename):
@@ -560,8 +576,8 @@ def getNext(counter=None, result=""):
             out_block_file.write(div)
             out_block_file.write("\n")
             out_block_file.close()
-        # Append to result
-        result = result + div
+    # Append to result
+    result = result + div
     return result
 # End of getNext(counter=None, result="")
 
@@ -618,8 +634,17 @@ def closeOutputFile(f_handle):
 # After #SETVAR keyword follows comma-separated list of allowed variable,
 # followed by semicolon-separated list of variable assignment statements.
 # Add allowed assignment to env_vars.
-def parseVars(command):
+# Save variables in dictionary with session name.
+# If no session provided use "nosession" name.
+def parseVars(command,session=""):
     global env_vars
+    newvars=dict()
+    if session != "":
+        dict_name = session
+    else:
+        dict_name = "nosession"
+    if env_vars[dict_name] is None:
+        env_vars[dict_name] = dict()
     print "Have command in parseVars: " + command
     dollar_split=command.split("$")
     allowed_vars=""
@@ -636,16 +661,12 @@ def parseVars(command):
             key = str(key)  # Convert from Unicode
             value = str(value)
             print "key:"+key + " val="+ str(value)
-            print len(allowed_vars)
             if key in allowed_vars or len(allowed_vars) == 0:
                 print key + " OK"
-                env_vars[key] = value
+                newvars[key] = value
+    env_vars[dict_name].update(newvars)
 
 
-
-    #m = re.search("([\w/]+)=([\S]+)",str)
-    #if m is not None and len(m.groups()) == 2:
-    #    env_vars[m.group(1)] = m.group(2)
 
 
 # Get command from message. Message should start with a number, maybe followed by "$" and arguments.
