@@ -700,8 +700,8 @@ def shutdown(session=""):
     print "Shutting down"
     sleep(sleep_time + 1)
     if session != "":
-    # Remove session files
-    shutil.rmtree(sessionDir(session))
+        # Remove session files
+        shutil.rmtree(sessionDir(session))
     pid = os.getpid()
     print "PID\t"+str(pid)
     ps = subprocess.check_output(["ps","-p",str(pid)])
