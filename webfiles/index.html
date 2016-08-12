@@ -99,7 +99,7 @@
       }
 
       var obj = JSON.parse(data);
-      $("#out"+n).append("<div class=output>"+obj.stdout+"</div>");
+      $("#out"+n).html("<div class=output>"+obj.stdout+"</div>");
       $("#out"+n).animate({ scrollTop: $('#out'+n).prop("scrollHeight")}, 10);
       $("#out"+n).append("<div class=stderr>"+obj.stderr+"</div>");
       $("body").append(obj.next);

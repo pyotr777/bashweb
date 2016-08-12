@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.7alpha-2"
+ver = "0.8alpha-4"
 
 import bottle
 import subprocess
@@ -47,9 +47,9 @@ except:
 html_base = "index.html"
 static_folder = web_folder+"/static"
 default_block = web_folder+"/default.html"
-block_counter = 0
-WS_alive = False
+WS_alive = []  # List of sessions with open WS connections
 pid = os.getpid()
+sleep_time = 0.05 # Pause length in seconds.
 
 command_list=[]
 descript_list=[]
@@ -101,8 +101,9 @@ def getSessionID(request):
         return ""
     else:
         return request.query.session
+
+
 def attachSession(session):
-    global block_counter
     global static_folder
     sd = sessionDir(session)
     print "["+str(pid)+"]Attach to " + session
@@ -113,12 +114,12 @@ def attachSession(session):
 
     page = showIndex()
     print "["+str(pid)+"]Reading block files starting from 1"
-    br_counter = 1
-    result = getNext(br_counter, page, session=session)
+    counter = 1
+    result = getNext(counter, page, session=session)
 
     # Set block counter in browser
-    print "["+str(pid)+"]BC\t" + str(block_counter)
-    result = result + "\n<script>block_counter = "+str(block_counter)+";\n"
+    print "["+str(pid)+"]BC\t" + str(counter)
+    result = result + "\n<script>block_counter = "+str(counter)+";\n"
     result = result + "\nconsole.log(\"BC=\"+block_counter);</script>\n"
     return result
 
@@ -149,13 +150,10 @@ def readOutputFile(fname):
 # Send start_session.html to browser
 # which will reload to the same address now with ?session=... parameter.
 def startSession(session):
-    global block_counter
     global env_vars
-    block_counter = 0
     # Init env_vars for this session
     env_vars[session] = dict()
     page = "start_session.html"
-    print "["+str(pid)+"]Block counter reset to " + str(block_counter)
     file_name = web_folder+"/" + page
     print "["+str(pid)+"]Reading " + file_name
     start_file = open(file_name)
@@ -176,8 +174,7 @@ def showIndex():
 
 
 # Load next block or return save block.
-# Block number should be set in request parameters.
-# If no number supplied use global block_counter
+# Block number must be set in request parameters.
 @webint.route('/next')
 def next():
     print "["+str(pid)+"]Loading next block"
@@ -198,10 +195,14 @@ def exe(ws):
     session = getSessionID(bottle.request)
     if session != "":
         print "["+str(pid)+"]Session="+session
+        session_name=session
     else:
         print "["+str(pid)+"]No session"
-    WS_alive = True
-    print "WEB SOCKET\talive"
+        session_name="nosession"
+      
+    if session_name not in WS_alive:
+        WS_alive.append(session_name)
+    print "WEB SOCKET for "+session_name+"\topen"
     msg = ws.receive()
     if msg is None or len(msg) == 0:
         print "Error: Null command in /exe"
@@ -237,7 +238,7 @@ def exe(ws):
 
     if command == "shutdown":
         print "Got shutdown command."
-        shutdown()
+        shutdown(session)
         return
 
     init_env = os.environ.copy()
@@ -252,10 +253,12 @@ def exe(ws):
     next_block=getNext(counter+1, session=session)
     ws.send("#NEXT"+next_block)
     print "Next block sent"
-    WS_alive = False
-    print "ws:==X==:ws"
+    WS_alive.remove(session_name)
     if next_block == "OK":
-        shutdown()
+        if len(WS_alive)<1:
+            shutdown(session)
+        else:
+            print "Cannot shutdown. Have open WS for sessions: " + str(WS_alive)
     return
 # End def exe(ws)
 
@@ -270,6 +273,8 @@ def getEnvVars(session=""):
     else:
         dict_name = session
     return env_vars[dict_name]
+
+
 # Read output from step N of session S.
 # Called by refresh script in browser.
 # If process has finished (no running flag) return next block also.
@@ -358,7 +363,6 @@ def edit_xml(command_n):
     keys = bottle.request.forms.keys()
     for key in keys:
         val = bottle.request.forms.get(key)
-        #print  >> out, "key="+key+" val="+val
         try:
             node = f.xpath(key)
             node[0].text = val
@@ -369,7 +373,6 @@ def edit_xml(command_n):
             out.close()
             err.close()
             return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1, session=session)})
-
         except:
             print >> err, sys.exc_info()
             print >> err, "Not found: " + key
@@ -452,6 +455,12 @@ def outputFileName(session,counter):
 # Save output in output_NNN.txt file, send to web socket and to server stdout.
 def handleProcessOutput(proc, ws, counter,session=""):
     global WS_alive
+    global sleep_time
+
+    if session != "":
+        session_name = session
+    else:
+        session_name = "nosession"
     # Output file name
     outfilename = os.path.join(sessionDir(session),"output_" + str(counter) + ".txt")
     # Running flag file
@@ -463,18 +472,17 @@ def handleProcessOutput(proc, ws, counter,session=""):
     # Display lines in batches
     # After batch_size lines make a short pause to enable multiple requests processing
     batch_size = 20  # Number of lines to read before pause.
-    sleep_time = 0.05 # Pause length in seconds.
     line_counter = 0
     # Loop with running process output
     for line in iter(proc.stdout.readline, b''):
         # Open file for writing
         output_file_handler = openOutputFile(outfilename)
-        if WS_alive:
+        if session_name in WS_alive:
             try:
                 ws.send(html_safe(line))
             except WebSocketError as ex:
                 print "Web socket died."
-                WS_alive = False;
+                WS_alive.remove(session_name)
         print line,
         print >> output_file_handler, line,
         line_counter+=1
@@ -494,27 +502,21 @@ def handleProcessOutput(proc, ws, counter,session=""):
 # Return block with number 'counter' and append it to 'result'.
 # If block is saved (in session folder) use saved version and 
 # also append saved output if exists.
-# ! This should be the only function that sets (alters) block_counter.
+
 def getNext(counter=None, result="", session=""):
-    global block_counter
     global block_list
     global static_folder
     
     # Flag if we in FastForward mode and need next block
     read_next_block = False
     if counter is None:
-        print "["+str(pid)+"] Error: no counter in getNext"
-        block_counter += 1
-        counter = block_counter
-        print "BC set to " + str(counter)
+        print >> sys.stderr, "["+str(pid)+"] Error: no counter in getNext"
+        return ""
     else:
         counter = int(counter)
-        if counter > block_counter:
-            print "block_counter shoud be equal to counter\t"+str(block_counter)+"\t" + str(counter)
-            block_counter = counter
 
     print "["+str(pid)+"]Get next ("+str(counter)+") session="+session+"."
-    print "BC\t" + str(block_counter)
+
     if counter > len(block_list):
         print "No more commands"
         return "OK"
@@ -667,8 +669,6 @@ def parseVars(command,session=""):
     env_vars[dict_name].update(newvars)
 
 
-
-
 # Get command from message. Message should start with a number, maybe followed by "$" and arguments.
 # If message contains "$", use split to extract number.
 # First part should be integer number of command, second part - arguments for the command.
@@ -694,10 +694,12 @@ def html_safe(data):
 
 
 # Shutdown server
-def shutdown():
+def shutdown(session=""):
     global static_folder
-    global session
+    global sleep_time
     print "Shutting down"
+    sleep(sleep_time + 1)
+    if session != "":
     # Remove session files
     shutil.rmtree(sessionDir(session))
     pid = os.getpid()
