@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.8alpha-4"
+ver = "0.9alpha-1"
 
 import bottle
 import subprocess
@@ -54,6 +54,7 @@ sleep_time = 0.05 # Pause length in seconds.
 command_list=[]
 descript_list=[]
 block_list=[]
+scenario_list=[] # Scenario commands (NEXT, PART or STOP)
 
 # CONFIGURATION (workflow) initialisation
 # Read command_list, descrition list and block list from tsv file "script.tsv"
@@ -62,12 +63,16 @@ with open(static_folder+"/config/script_"+str(script_number)+".tsv", 'r') as scr
     i = 0
     for row in script:
         print "row:" + str(row)
-        block_list.append(row[0])
-        if row[1] is None:
+        block_list.append(row[1])
+        scenario_list.append(row[2])
+        if row[3] is None:
             print "Error: No command for block "+ str(i) + " in /config/script_"+str(script_number)+".tsv"
             shutdown()
-        command_list.append(row[1])
-        descript_list.append(row[2])
+        command_list.append(row[3])
+        if len(row) > 4 and row[4] is not None:
+            descript_list.append(row[4])
+        else:
+            descript_list.append("")
         i = i + 1
 
 
@@ -115,7 +120,7 @@ def attachSession(session):
     page = showIndex()
     print "["+str(pid)+"]Reading block files starting from 1"
     counter = 1
-    result = getNext(counter, page, session=session)
+    counter, result = getNext(counter, page, session=session)
 
     # Set block counter in browser
     print "["+str(pid)+"]BC\t" + str(counter)
@@ -178,15 +183,29 @@ def showIndex():
 @webint.route('/next')
 def next():
     print "["+str(pid)+"]Loading next block"
-    session = getSessionID(bottle.request)    
+    result = ""
+    session = getSessionID(bottle.request)
+    # If no session ID, it means start over from clean page. Need to return index.html.
+    if  session == "":
+        page = showIndex()
+        print "["+str(pid)+"]Reading block files starting from 1"
+        counter = 1
+        result = page + "\n<script>block_counter = "+str(counter)+";\n"
+        result = result + "\nconsole.log(\"BC=\"+block_counter);</script>\n"
+
     # Check browser block counter
     if hasattr(bottle.request.query, 'counter') and bottle.request.query.counter is not None:
         b_counter = bottle.request.query.counter
         print "Have browser counter " + b_counter
         counter = int(b_counter)
-        return getNext(counter,"",session=session)
+        print "Call getNext with (" + b_counter+", force_next=" + str(True)+ ")"
+        counter, next_block = getNext(counter, result, session,  force_next = True)        
+        #TODO Return next_block with counter in JSON format
+        return next_block
     else:
-        return getNext(session=session)
+        counter, next_block = getNext(result=result, session=session, force_next = True)
+        #TODO Return next_block with counter in JSON format
+        return next_block
 
 
 @webint.route('/exe', apply=[websocket])
@@ -206,7 +225,7 @@ def exe(ws):
     msg = ws.receive()
     if msg is None or len(msg) == 0:
         print "Error: Null command in /exe"
-        next_block=getNext(session=session)
+        counter, next_block=getNext(session=session)
         ws.send("#NEXT"+next_block)
         print "Next block sent"
         return
@@ -215,12 +234,11 @@ def exe(ws):
     command,counter = parseCommand(msg)
     if counter is None or int(counter) is None:
         print "Error: no counter in message to WS: " + msg
-        next_block=getNext(session=session)
+        counter, next_block=getNext(session=session)
         ws.send("#NEXT"+next_block)
         print "Next block sent"
         return
     print "command\t" + command
-    print "BC(browser)\t" + str(counter)
     if command.find("#SETVARS") == 0:
         print "setvars"
         # Got command with variables in it
@@ -231,7 +249,7 @@ def exe(ws):
         output_file_handler = open(outfilename,'w')
         print "SETVARS output saved to " + outfilename
         output_file_handler.close()
-        next_block=getNext(counter+1, session=session)
+        counter, next_block=getNext(counter+1, session=session)
         ws.send("#NEXT"+next_block)
         print "Next block sent"
         return
@@ -243,24 +261,21 @@ def exe(ws):
 
     init_env = os.environ.copy()
     merged_env = init_env.copy()
-    merged_env.update(getEnvVars(session))
+    if session != "":
+        merged_env.update(getEnvVars(session))
     print "Exectuing "+command
     #print "Environment " + str(merged_env)
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=merged_env, bufsize=1, shell=True, executable="/bin/bash")
-    if session != "":
-        handleProcessOutput(proc,ws,counter,session)  # Output save to file and sent to WS
+    handleProcessOutput(proc,ws,counter,session)  # Output save to file and sent to WS
 
-    next_block=getNext(counter+1, session=session)
+    counter, next_block=getNext(counter+1, session=session)
     ws.send("#NEXT"+next_block)
     print "Next block sent"
-    WS_alive.remove(session_name)
-    if next_block == "OK":
-        if len(WS_alive)<1:
-            shutdown(session)
-        else:
-            print "Cannot shutdown. Have open WS for sessions: " + str(WS_alive)
+    WS_alive.remove(session_name)    
     return
 # End def exe(ws)
+
+
 
 
 # Return dictionary with environment variables for given session.
@@ -345,7 +360,10 @@ def edit_xml(command_n):
         stderr = err.getvalue()
         out.close()
         err.close()
-        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1, session=session)})
+        counter, next_block = getNext(session=session)
+        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block, 'counter': counter})
+    
+    counter, next_block = getNext(counter+1, session=session)
     print "["+str(pid)+"]Editing "+filepath
     # Open file
     if filepath.find("/") != 0:
@@ -359,7 +377,7 @@ def edit_xml(command_n):
         stderr = err.getvalue()
         out.close()
         err.close()
-        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1, session=session)})
+        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block, 'counter': counter})
 
     keys = bottle.request.forms.keys()
     for key in keys:
@@ -373,7 +391,7 @@ def edit_xml(command_n):
             stderr = err.getvalue()
             out.close()
             err.close()
-            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1, session=session)})
+            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block, 'counter': counter})
         except:
             print >> err, sys.exc_info()
             print >> err, "Not found: " + key
@@ -381,7 +399,7 @@ def edit_xml(command_n):
             stderr = err.getvalue()
             out.close()
             err.close()
-            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1, session=session)})
+            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block, 'counter': counter})
 
     print etree.tostring(f)
     # Save to file
@@ -393,7 +411,7 @@ def edit_xml(command_n):
         stderr = err.getvalue()
         out.close()
         err.close()
-        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1, session=session)})
+        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block, 'counter': counter})
 
     print >> fwrt, etree.tostring(f)
     fwrt.close()
@@ -406,7 +424,7 @@ def edit_xml(command_n):
         stderr = err.getvalue()
         out.close()
         err.close()
-        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter+1, session=session)})
+        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block, 'counter': counter})
 
     new_xml = frd.read()
     frd.close()
@@ -426,7 +444,7 @@ def edit_xml(command_n):
     out.close()
     err.close()
 
-    return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': getNext(counter + 1, session=session)})
+    return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block, 'counter': counter})
 # End def edit_xml(command_n)
 
 
@@ -504,30 +522,58 @@ def handleProcessOutput(proc, ws, counter,session=""):
 # If block is saved (in session folder) use saved version and 
 # also append saved output if exists.
 
-def getNext(counter=None, result="", session=""):
+def getNext(counter=None, result="", session="", force_next=False):
     global block_list
+    global scenario_list
     global static_folder
     
+    print "Force next is " + str(force_next)
     # Flag if we in FastForward mode and need next block
     read_next_block = False
     if counter is None:
         print >> sys.stderr, "["+str(pid)+"] Error: no counter in getNext"
-        return ""
+        return 0,""
     else:
         counter = int(counter)
 
+    scenario = "NEXT"
+    print len(block_list)
+    if counter > 1 and counter-2 < len(block_list):
+        scenario =  scenario_list[counter-2]
+
     print "["+str(pid)+"]Get next ("+str(counter)+") session="+session+"."
+    print "Last scenario command was " + str(scenario)
+    
 
-    if counter > len(block_list):
+    if scenario == "STOP":
+        print "Stop command"
+        if not force_next:
+            return counter, result
+        else:
+            print "Forced to next block"
+
+    if counter > len(block_list):        
         print "No more commands"
-        return "OK"
+        # Shutdown if counter > lock list length and previous command was not STOP
+        if scenario == "STOP":
+            shutdown()
 
+    # Check next scenario
+    scenario =  scenario_list[counter-1]
+    print "This scenario command is " + str(scenario)
+    if scenario != "NEXT" and not force_next:
+        # Do not load next block if for PART command came not from /next (with force_next)
+        print "Suppose block " + str(counter) + " was already loaded into browser."
+        return counter, result
+
+    use_saved_block = False
     if session != "":
         # Check if block counter is saved
         block_fname = blockFileName(session, counter)
         # USe saved block
         if os.path.isfile(block_fname):
             print "["+str(pid)+"]Found saved block " + block_fname
+            use_saved_block = True
             block_f = open(block_fname,'r')
             block = block_f.read()
             block_f.close()
@@ -555,33 +601,39 @@ def getNext(counter=None, result="", session=""):
             # Need next block
             # ! INDENTION SHOULD BE SAME AS if os.path.isfile(output_fname):
             if read_next_block:
-                result = getNext(counter+1, result, session)
-            return result
+                counter, result = getNext(counter+1, result, session, force_next)
 
-    # Use raw block
-    block_f = web_folder+"/" + block_list[counter-1]
-    print "["+str(pid)+"]Use raw block " + block_f
-    div_block_h = open(block_f)
-    div = div_block_h.read()
-    div_block_h.close()
-    # Replace default IDs with block unique IDs
-    div = re.sub(r'NNN',str(counter),div)
-    # And command  - use counter instead of command intself for rsecurity reasons.
-    div = re.sub(r'COMMAND',str(counter),div)
-    # Discription
-    div = re.sub(r'DISCRIPTION',descript_list[counter-1],div)
-    if session != "":
-        # Save block to file blockNNN.html
-        outfilename = os.path.join(sessionDir(session),"block_" + str(counter) + ".html")
-        if not os.path.isfile(outfilename):
-            print "Write to " + outfilename
-            out_block_file = open(outfilename, 'w')
-            out_block_file.write(div)
-            out_block_file.write("\n")
-            out_block_file.close()
-    # Append to result
-    result = result + div
-    return result
+    if not use_saved_block:
+        # Use raw block
+        block_f = web_folder+"/" + block_list[counter-1]
+        print "["+str(pid)+"]Use raw block " + block_f
+        div_block_h = open(block_f)
+        div = div_block_h.read()
+        div_block_h.close()
+        # Replace default IDs with block unique IDs
+        div = re.sub(r'NNN',str(counter),div)
+        # And command  - use counter instead of command intself for rsecurity reasons.
+        div = re.sub(r'COMMAND',str(counter),div)
+        # Discription
+        div = re.sub(r'DISCRIPTION',descript_list[counter-1],div)
+        if session != "":
+            # Save block to file blockNNN.html
+            outfilename = os.path.join(sessionDir(session),"block_" + str(counter) + ".html")
+            if not os.path.isfile(outfilename):
+                print "Write to " + outfilename
+                out_block_file = open(outfilename, 'w')
+                out_block_file.write(div)
+                out_block_file.write("\n")
+                out_block_file.close()
+        # Append to result
+        result = result + div
+
+    if scenario == "PART":
+        print "Proceed to next block " + str(counter+1)
+        result = result + "<div class=displayblock id=out" + str(counter) + "></div>\n"
+        counter, result = getNext(counter+1, result, session, force_next)
+
+    return counter, result
 # End of getNext(counter=None, result="")
 
 
@@ -643,10 +695,10 @@ def parseVars(command,session=""):
     global env_vars
     newvars=dict()
     if session != "":
-        dict_name = session
+        dict_name = str(session)
     else:
         dict_name = "nosession"
-    if env_vars[dict_name] is None:
+    if dict_name not in env_vars.keys() or env_vars[dict_name] is None:
         env_vars[dict_name] = dict()
     print "Have command in parseVars: " + command
     dollar_split=command.split("$")
@@ -683,6 +735,16 @@ def parseCommand(msg):
         counter = int(msg)
         command = command_list[counter - 1]
     return command,counter
+
+
+# Execute command in shell
+# and return its stdout and stderr streams.
+def Execute(command) :
+    print "Executing " + command
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output = [l.decode('utf8') for l in proc.stdout.readlines()]
+    err = [l.decode('utf8') for l in proc.stderr.readlines()]    
+    return (output, err)
 
 
 # HTML-sanitation
