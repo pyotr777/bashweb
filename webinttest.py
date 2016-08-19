@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.9alpha-1"
+ver = "0.9alpha-2"
 
 import bottle
 import subprocess
@@ -63,14 +63,14 @@ with open(static_folder+"/config/script_"+str(script_number)+".tsv", 'r') as scr
     i = 0
     for row in script:
         print "row:" + str(row)
-        block_list.append(row[1])
-        scenario_list.append(row[2])
-        if row[3] is None:
+        block_list.append(row[0])
+        scenario_list.append(row[1])
+        if row[2] is None:
             print "Error: No command for block "+ str(i) + " in /config/script_"+str(script_number)+".tsv"
             shutdown()
-        command_list.append(row[3])
-        if len(row) > 4 and row[4] is not None:
-            descript_list.append(row[4])
+        command_list.append(row[2])
+        if len(row) > 3 and row[3] is not None:
+            descript_list.append(row[3])
         else:
             descript_list.append("")
         i = i + 1
@@ -331,7 +331,7 @@ def readoutput():
         console.log("Load next="+load_next);
         if (load_next) {
             console.log("Loading next block '''+session+" "+str(counter+1)+'''");
-            $("body").append($("<div>").load("/next?counter='''+str(counter+1)+'''"));
+            $("body").append($("<div>").load("/next?session='''+session+'''&counter='''+str(counter+1)+'''"));
             load_next = 0; // prevent multiple loads of same block
         }
         </script>'''
@@ -363,7 +363,7 @@ def edit_xml(command_n):
         counter, next_block = getNext(session=session)
         return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block, 'counter': counter})
     
-    counter, next_block = getNext(counter+1, session=session)
+    next_counter, next_block = getNext(counter+1, session=session)
     print "["+str(pid)+"]Editing "+filepath
     # Open file
     if filepath.find("/") != 0:
@@ -433,6 +433,7 @@ def edit_xml(command_n):
     if session != "":
         # Open output file
         outfilename = os.path.join(sessionDir(session),"output_" + str(counter) + ".txt")
+        print "Writing output to file " + outfilename
         output_file_handler = openOutputFile(outfilename)
         print >> output_file_handler, new_xml,
         closeOutputFile(output_file_handler)
@@ -478,24 +479,26 @@ def handleProcessOutput(proc, ws, counter,session=""):
 
     if session != "":
         session_name = session
+        # Output file name
+        outfilename = os.path.join(sessionDir(session),"output_" + str(counter) + ".txt")
+        # Running flag file
+        # Indicates that this step is not finished. Used in session fastforwarding.
+        RFF=outfilename+"_"
+        print "Run flag file " + RFF
+        RFF_h = open(RFF,'w')
+        RFF_h.close()
     else:
         session_name = "nosession"
-    # Output file name
-    outfilename = os.path.join(sessionDir(session),"output_" + str(counter) + ".txt")
-    # Running flag file
-    # Indicates that this step is not finished. Used in session fastforwarding.
-    RFF=outfilename+"_"
-    print "Run flag file " + RFF
-    RFF_h = open(RFF,'w')
-    RFF_h.close()
+
     # Display lines in batches
     # After batch_size lines make a short pause to enable multiple requests processing
     batch_size = 20  # Number of lines to read before pause.
     line_counter = 0
     # Loop with running process output
     for line in iter(proc.stdout.readline, b''):
-        # Open file for writing
-        output_file_handler = openOutputFile(outfilename)
+        if session != "":
+            # Open file for writing
+            output_file_handler = openOutputFile(outfilename)
         if session_name in WS_alive:
             try:
                 ws.send(html_safe(line))
@@ -503,19 +506,22 @@ def handleProcessOutput(proc, ws, counter,session=""):
                 print "Web socket died."
                 WS_alive.remove(session_name)
         print line,
-        print >> output_file_handler, line,
+        if session != "":
+            print >> output_file_handler, line,
         line_counter+=1
         if line_counter >= batch_size:
-            closeOutputFile(output_file_handler)
+            if session != "":
+                closeOutputFile(output_file_handler)
             sleep(sleep_time)
             line_counter = 0
-    if os.path.isfile(outfilename):
+    if session != "" and os.path.isfile(outfilename):
         closeOutputFile(output_file_handler)
     print "["+str(pid)+"]Finished"
     proc.wait()
-    # Remove RFF
-    print "Delete "+RFF
-    os.remove(RFF)
+    if session != "":
+        # Remove RFF
+        print "Delete "+RFF
+        os.remove(RFF)
 
 
 # Return block with number 'counter' and append it to 'result'.
@@ -537,15 +543,16 @@ def getNext(counter=None, result="", session="", force_next=False):
         counter = int(counter)
 
     scenario = "NEXT"
+    prev_scenario = "NEXT"
     print len(block_list)
     if counter > 1 and counter-2 < len(block_list):
-        scenario =  scenario_list[counter-2]
+        prev_scenario =  scenario_list[counter-2]
 
     print "["+str(pid)+"]Get next ("+str(counter)+") session="+session+"."
-    print "Last scenario command was " + str(scenario)
+    print "Previous scenario command was " + str(prev_scenario)
     
 
-    if scenario == "STOP":
+    if prev_scenario == "STOP":
         print "Stop command"
         if not force_next:
             return counter, result
@@ -554,14 +561,14 @@ def getNext(counter=None, result="", session="", force_next=False):
 
     if counter > len(block_list):        
         print "No more commands"
-        # Shutdown if counter > lock list length and previous command was not STOP
-        if scenario == "STOP":
+        # Shutdown if counter > block list length and previous command was STOP
+        if prev_scenario == "STOP":
             shutdown()
 
     # Check next scenario
     scenario =  scenario_list[counter-1]
     print "This scenario command is " + str(scenario)
-    if scenario != "NEXT" and not force_next:
+    if prev_scenario == "PART" and not force_next:
         # Do not load next block if for PART command came not from /next (with force_next)
         print "Suppose block " + str(counter) + " was already loaded into browser."
         return counter, result

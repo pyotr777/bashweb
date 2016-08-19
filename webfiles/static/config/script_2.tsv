@@ -1,7 +1,9 @@
-1	envvars_block.html	NEXT	#SETVARS$KP_SELF_CERT,KP_WEB_DNS,KP_WEB_MAIL	Set environnment vars
-2	command_block.html	NEXT	env | grep "KP_"	Check KP_* envvars
-3	save_to_xml.html	NEXT	../config.xml	Edit kp_server configuration file
-4	command_block.html	STOP	./disp.sh	Display test
-5	command_block.html	PART	ls -l /etc/	LS /etc
-6	save_to_xml.html	PART	../config.xml	Edit kp_server configuration file
-7	command_block.html	STOP	ps ax | grep webint	Check that webint server is runnning
+envvars_block.html	NEXT	#SETVARS$KP_SELF_CERT,KP_WEB_DNS,KP_WEB_MAIL	Set environnment vars
+command_block.html	NEXT	./test_long.sh	Long test
+command_block.html	NEXT	env | grep "KP_"	Check KP_* envvars
+save_to_xml.html	NEXT	../config.xml	Edit kp_server configuration file
+command_block.html	STOP	./disp.sh	Display test
+command_block.html	PART	ls -l /etc/	LS /etc
+save_to_xml.html	PART	../config.xml	Edit kp_server configuration file
+command_block.html	PART	./disp.sh	Display test
+command_block.html	STOP	ps ax | grep webint	Check that webint server is runnning

@@ -5,7 +5,7 @@
   <script>
     session="SESSION"  
     function reload() {
-      window.location.assign(window.location.href+"?session="+session)
+      window.location.assign(window.location.href.split('?')[0]+"?session="+session)
     }
   </script>
 </head>
