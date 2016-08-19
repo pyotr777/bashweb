@@ -24,7 +24,8 @@ from bottle.ext.websocket import GeventWebSocketServer
 from bottle.ext.websocket import websocket
 from geventwebsocket.websocket import WebSocketError
 from ansi2html import Ansi2HTMLConverter
-import csv
+import yaml
+import pprint
 import random
 from string import ascii_uppercase, digits
 import shutil
@@ -51,29 +52,12 @@ WS_alive = []  # List of sessions with open WS connections
 pid = os.getpid()
 sleep_time = 0.05 # Pause length in seconds.
 
-command_list=[]
-descript_list=[]
-block_list=[]
-scenario_list=[] # Scenario commands (NEXT, PART or STOP)
+
 
 # CONFIGURATION (workflow) initialisation
 # Read command_list, descrition list and block list from tsv file "script.tsv"
-with open(static_folder+"/config/script_"+str(script_number)+".tsv", 'r') as script:
-    script = csv.reader(script, delimiter='\t')
-    i = 0
-    for row in script:
-        print "row:" + str(row)
-        block_list.append(row[0])
-        scenario_list.append(row[1])
-        if row[2] is None:
-            print "Error: No command for block "+ str(i) + " in /config/script_"+str(script_number)+".tsv"
-            shutdown()
-        command_list.append(row[2])
-        if len(row) > 3 and row[3] is not None:
-            descript_list.append(row[3])
-        else:
-            descript_list.append("")
-        i = i + 1
+with open(static_folder+"/config/script_"+str(script_number)+".yml", 'r') as script:
+    config = yaml.load(script)
 
 
 print "Webint v" + str(ver)
