@@ -7,3 +7,4 @@ command_block.html	PART	ls -l /etc/	LS /etc
 save_to_xml.html	PART	../config.xml	Edit kp_server configuration file
 command_block.html	PART	./disp.sh	Display test
 command_block.html	STOP	ps ax | grep webint	Check that webint server is runnning
+none	STOP	shutdown

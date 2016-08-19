@@ -25,8 +25,7 @@ div.displayblock {
     overflow-y:visible;
 }
 
-
-a.restart {
+a.button {
     display: block;
     float: right;
     -webkit-border-radius: 5;
@@ -35,11 +34,15 @@ a.restart {
     font-family: Arial;
     color: #fffaff;
     font-size: 16px;
-    background: #ff94a2;
     padding: 4px 7px 4px 7px;
     text-decoration: none;
     position:relative;
     top: -50px;
+    margin: 5px;
+}
+
+a.restart {
+    background: #ef958d;
 }
 
 a.restart:hover {
@@ -47,6 +50,23 @@ a.restart:hover {
   text-decoration: none;
 }
 
+a.config {
+    background: #94b7db;
+}
+
+a.config:hover {
+  background: #2637ff;
+  text-decoration: none;
+}
+
+a.shutdown {
+    background: #dbbf80;
+}
+
+a.shutdown:hover {
+  background: #ffd526;
+  text-decoration: none;
+}
 
 .stderr {
     color: red;

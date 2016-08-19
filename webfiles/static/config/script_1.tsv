@@ -11,4 +11,5 @@ command_block.html	PART	cat /etc/kportal/www/config.xml 	Display Kportal configu
 save_to_xml.html	PART	/etc/kportal/www/config.xml	Edit Kportal configuration file
 command_block.html	PART	/home/ubuntu/kportal/start_apache.sh 9005	Restart Apache in Docker container
 command_block.html	PART	sudo -E su kportal -c "kp_server.sh 9004 -tls"	Restart kp_server
-command_block.html	STOP	cat /home/kportal/log/stdout.log	View kp_server logs.
+command_block.html	PART	cat /home/kportal/log/stdout.log	View kp_server logs.
+command_block.html	STOP	shutdown	Shutdown server
