@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.9alpha-2"
+ver = "0.10alpha-1"
 
 import bottle
 import subprocess
@@ -505,7 +505,6 @@ def returnError(out, err, session, msg, counter):
 # Return block with number 'counter' and append it to 'result'.
 # If block is saved (in session folder) use saved version and 
 # also append saved output if exists.
-
 def getNext(counter=None, result="", session="", force_next=False):
     global config
     
@@ -695,21 +694,6 @@ def parseVars(args,allowed,session=""):
                 print key + " OK (" + str(len(allowed)) + ")"
                 newvars[key] = value
     env_vars[dict_name].update(newvars)
-
-
-# Get command from message. Message should start with a number, maybe followed by "$" and arguments.
-# If message contains "$", use split to extract number.
-# First part should be integer number of command, second part - arguments for the command.
-def parseCommand(msg):
-    print "parseCommand "+ msg
-    if msg.find("$") > 0:
-        parts = msg.split("$")
-        counter = int(parts[0])
-        command = config[counter]["command"]+ "$" + "$".join(parts[1:])
-    else:
-        counter = int(msg)
-        command = config[counter]
-    return command,counter
 
 
 # Execute command in shell
