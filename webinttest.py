@@ -53,7 +53,6 @@ pid = os.getpid()
 sleep_time = 0.05 # Pause length in seconds.
 
 
-
 # CONFIGURATION (workflow) initialisation
 # Read command_list, descrition list and block list from tsv file "script.tsv"
 with open(static_folder+"/config/script_"+str(script_number)+".yml", 'r') as script:
@@ -66,9 +65,7 @@ print "Web page    : " + web_folder + "/" + html_base
 print "Static folder: " + static_folder
 print "Default block: " + default_block
 print "Script:"
-print command_list
-print descript_list
-print block_list
+print yaml.dump(config)
 
 
 @webint.route('/')
@@ -214,20 +211,27 @@ def exe(ws):
         print "Next block sent"
         return
 
-    print "Parcing message "+msg
-    command,counter = parseCommand(msg)
+    parsed_yaml = yaml.safe_load(msg)
+    print "Received message"
+    print yaml.dump(parsed_yaml)
+    counter = int(parsed_yaml["command"])
     if counter is None or int(counter) is None:
         print "Error: no counter in message to WS: " + msg
         counter, next_block=getNext(session=session)
         ws.send("#NEXT"+next_block)
         print "Next block sent"
         return
+    command = config[counter]["command"]
     print "command\t" + command
-    if command.find("#SETVARS") == 0:
+    if command == "#SETVARS":
         print "setvars"
         # Got command with variables in it
         # Save vars into env_vars and return
-        parseVars(command,session)
+        if parsed_yaml["args"] is not None:
+            print "args=" + str(parsed_yaml["args"])
+            print "Allowed vars:"
+            print config[counter]["allowed_vars"]
+        parseVars(parsed_yaml["args"],config[counter]["allowed_vars"],session)
         # Create output file 
         outfilename = outputFileName(session,counter)
         output_file_handler = open(outfilename,'w')
@@ -328,6 +332,8 @@ def readoutput():
 # Add / replace parts of XML file
 @webint.post('/xml/edit/<command_n>')
 def edit_xml(command_n):
+    global config
+
     print "["+str(pid)+"]edit_xml called with " + command_n
     session = getSessionID(bottle.request)
     if session != "":
@@ -336,18 +342,18 @@ def edit_xml(command_n):
     err = StringIO.StringIO()
     out.write('')
     # Get file path
-    filepath, counter = parseCommand(command_n)
+
+    counter = int(command_n)
     if counter is None or int(counter) is None:
-        print "Error: no counter in command to /xml/edit: " + msg
-        print >> err, "Error: no counter in command to /xml/edit"
-        stdout = out.getvalue()
-        stderr = err.getvalue()
-        out.close()
-        err.close()
-        counter, next_block = getNext(session=session)
-        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block, 'counter': counter})
+        return returnError(out, err, session, "Error: no counter in command to /xml/edit: " + command_n, counter)
+
+    command = config[counter]["command"]
+    print "command\t" + command
+        
+    if config[counter]["filepath"] is None  or len(config[counter]["filepath"]) < 1:
+        return returnError(out, err, session,"Filepath for command "+str(counter)+" not set in configuration script.", counter)
+    filepath = config[counter]["filepath"]
     
-    next_counter, next_block = getNext(counter+1, session=session)
     print "["+str(pid)+"]Editing "+filepath
     # Open file
     if filepath.find("/") != 0:
@@ -356,12 +362,7 @@ def edit_xml(command_n):
     try:
         f = etree.parse(filepath)
     except IOError as ex:
-        print  >> err, "Error reading file " + filepath
-        stdout = out.getvalue()
-        stderr = err.getvalue()
-        out.close()
-        err.close()
-        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block, 'counter': counter})
+        return returnError(out, err, session,"Error reading file " + filepath, counter)
 
     keys = bottle.request.forms.keys()
     for key in keys:
@@ -370,45 +371,25 @@ def edit_xml(command_n):
             node = f.xpath(key)
             node[0].text = val
         except etree.XPathEvalError:
-            print >> err, "Wrong path syntax: " + key
-            stdout = out.getvalue()
-            stderr = err.getvalue()
-            out.close()
-            err.close()
-            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block, 'counter': counter})
+            return returnError(out, err, session, "Wrong path syntax: " + key, counter)
         except:
             print >> err, sys.exc_info()
-            print >> err, "Not found: " + key
-            stdout = out.getvalue()
-            stderr = err.getvalue()
-            out.close()
-            err.close()
-            return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block, 'counter': counter})
+            return returnError(out, err, session, "Not found: " + key, counter)
 
     print etree.tostring(f)
     # Save to file
     try:
         fwrt = open(filepath,'w')
     except IOError as ex:
-        print  >> err, "Error writing to file " + filepath
-        stdout = out.getvalue()
-        stderr = err.getvalue()
-        out.close()
-        err.close()
-        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block, 'counter': counter})
+        return returnError(out, err, session, "Error writing to file " + filepath, counter)        
 
     print >> fwrt, etree.tostring(f)
     fwrt.close()
     print "Wrote XML to " + filepath
     try:
         frd = open(filepath,'r')
-    except IOError as ex:
-        print  >> err, "Error reading file " + filepath
-        stdout = out.getvalue()
-        stderr = err.getvalue()
-        out.close()
-        err.close()
-        return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block, 'counter': counter})
+    except IOError as ex:        
+        return returnError(out, err, session, "Error reading file " + filepath, counter)
 
     new_xml = frd.read()
     frd.close()
@@ -421,6 +402,8 @@ def edit_xml(command_n):
         output_file_handler = openOutputFile(outfilename)
         print >> output_file_handler, new_xml,
         closeOutputFile(output_file_handler)
+
+    next_counter, next_block = getNext(counter+1, session=session)
 
     # Return stdout and stderr
     stdout = out.getvalue()
@@ -508,14 +491,23 @@ def handleProcessOutput(proc, ws, counter,session=""):
         os.remove(RFF)
 
 
+# Return JSON with error message for sending to browser
+def returnError(out, err, session, msg, counter):
+    print  >> err, msg
+    stdout = out.getvalue()
+    stderr = err.getvalue()
+    out.close()
+    err.close()
+    counter, next_block = getNext(counter, session=session)
+    return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block, 'counter': counter})
+
+
 # Return block with number 'counter' and append it to 'result'.
 # If block is saved (in session folder) use saved version and 
 # also append saved output if exists.
 
 def getNext(counter=None, result="", session="", force_next=False):
-    global block_list
-    global scenario_list
-    global static_folder
+    global config
     
     print "Force next is " + str(force_next)
     # Flag if we in FastForward mode and need next block
@@ -528,9 +520,10 @@ def getNext(counter=None, result="", session="", force_next=False):
 
     scenario = "NEXT"
     prev_scenario = "NEXT"
-    print len(block_list)
-    if counter > 1 and counter-2 < len(block_list):
-        prev_scenario =  scenario_list[counter-2]
+    print "Configuration has " + str(len(config)) + " commands."
+
+    if counter > 1 and counter-1 < len(config):
+        prev_scenario =  config[counter-1]["scenario"] #scenario_list[counter-2]
 
     print "["+str(pid)+"]Get next ("+str(counter)+") session="+session+"."
     print "Previous scenario command was " + str(prev_scenario)
@@ -543,14 +536,14 @@ def getNext(counter=None, result="", session="", force_next=False):
         else:
             print "Forced to next block"
 
-    if counter > len(block_list):        
+    if counter > len(config):        
         print "No more commands"
         # Shutdown if counter > block list length and previous command was STOP
         if prev_scenario == "STOP":
             shutdown()
 
     # Check next scenario
-    scenario =  scenario_list[counter-1]
+    scenario =  config[counter]["scenario"]
     print "This scenario command is " + str(scenario)
     if prev_scenario == "PART" and not force_next:
         # Do not load next block if for PART command came not from /next (with force_next)
@@ -596,7 +589,7 @@ def getNext(counter=None, result="", session="", force_next=False):
 
     if not use_saved_block:
         # Use raw block
-        block_f = web_folder+"/" + block_list[counter-1]
+        block_f = web_folder+"/" + config[counter]["html"]
         print "["+str(pid)+"]Use raw block " + block_f
         div_block_h = open(block_f)
         div = div_block_h.read()
@@ -606,7 +599,7 @@ def getNext(counter=None, result="", session="", force_next=False):
         # And command  - use counter instead of command intself for rsecurity reasons.
         div = re.sub(r'COMMAND',str(counter),div)
         # Discription
-        div = re.sub(r'DISCRIPTION',descript_list[counter-1],div)
+        div = re.sub(r'DISCRIPTION',config[counter]["discription"],div)
         if session != "":
             # Save block to file blockNNN.html
             outfilename = os.path.join(sessionDir(session),"block_" + str(counter) + ".html")
@@ -675,14 +668,15 @@ def closeOutputFile(f_handle):
         os.remove(flag_filename)
 
 
-# Get envvars from string in format:
-# #SETVARS:VAR1,...,VARn:{VARj=VALj;... }
-# After #SETVAR keyword follows comma-separated list of allowed variable,
-# followed by semicolon-separated list of variable assignment statements.
+# Set envvars.
+# Arguments format: 
+# args = {'key':'value', ...}
+# allowed = {'var':'default value', ...}
+# 
 # Add allowed assignment to env_vars.
 # Save variables in dictionary with session name.
 # If no session provided use "nosession" name.
-def parseVars(command,session=""):
+def parseVars(args,allowed,session=""):
     global env_vars
     newvars=dict()
     if session != "":
@@ -691,24 +685,14 @@ def parseVars(command,session=""):
         dict_name = "nosession"
     if dict_name not in env_vars.keys() or env_vars[dict_name] is None:
         env_vars[dict_name] = dict()
-    print "Have command in parseVars: " + command
-    dollar_split=command.split("$")
-    allowed_vars=""
-    if len(dollar_split) > 2:
-        allowed_vars=dollar_split[1].split(",")
-        json_part=dollar_split[2]
-    else:
-        json_part=dollar_split[1]
-    if len(json_part) > 0:
-        print "Loading to JSON object:" + json_part
-        parsed_json = json.loads(json_part)
-        # Loop through parsed object attributes
-        for key, value in parsed_json.iteritems():
+    print "Have args in parseVars: " + str(args)
+    # Loop through parsed object attributes
+    for key, value in args.iteritems():
             key = str(key)  # Convert from Unicode
             value = str(value)
-            print "key:"+key + " val="+ str(value)
-            if key in allowed_vars or len(allowed_vars) == 0:
-                print key + " OK"
+            print "key:"+key + " val:"+ str(value)
+            if key in allowed or len(allowed) == 0:
+                print key + " OK (" + str(len(allowed)) + ")"
                 newvars[key] = value
     env_vars[dict_name].update(newvars)
 
@@ -721,10 +705,10 @@ def parseCommand(msg):
     if msg.find("$") > 0:
         parts = msg.split("$")
         counter = int(parts[0])
-        command = command_list[counter - 1] + "$" + "$".join(parts[1:])
+        command = config[counter]["command"]+ "$" + "$".join(parts[1:])
     else:
         counter = int(msg)
-        command = command_list[counter - 1]
+        command = config[counter]
     return command,counter
 
 

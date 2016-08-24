@@ -5,7 +5,8 @@
     DNS: <input type="text" id="DNS_txt_NNN" onchange="update_vars()" value="" size="50" /><br>
     Mail: <input type="text" id="MAIL_txt_NNN" onchange="update_vars()" value="kportal.aics.riken@gmail.com" size="50"/>
     </div>
-    <input type=hidden id="txt_NNN" value="" />
+    <input type=hidden id="command_NNN" value="COMMAND" />
+    <input type=hidden id="args_NNN" value="" />
     <button class="hidden_button" id="exec_button_NNN" onclick="update_vars();exec(NNN)">exec</button>
 </div>
 <script>
@@ -24,12 +25,12 @@
     function update_vars() {
       if (document.getElementById('use_self_signed').checked) {
         JSONobj["KP_SELF_CERT"] = 1;
-      } else {
+      } else {        
         JSONobj["KP_WEB_DNS"] = $("#DNS_txt_NNN").val();
         JSONobj["KP_WEB_MAIL"] = $("#MAIL_txt_NNN").val();
       }
-      $("#txt_NNN").val("COMMAND$" + JSON.stringify(JSONobj));
-      console.log("Next command is: "+ $("#txt_NNN").val());
+      $("#args_NNN").val(JSON.stringify(JSONobj));
+      console.log("Next command args: "+ $("#args_NNN").val());
     }
 init_block();
 </script>

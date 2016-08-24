@@ -14,6 +14,7 @@ def yaml_load(filepath):
 def yaml_dump(filepath, data):
     with open(filepath, "w") as fd:
         yaml.dump(data, fd)
+        fd.close()
 
 if __name__ == "__main__":
     pp = pprint.PrettyPrinter(indent=4)
@@ -21,6 +22,6 @@ if __name__ == "__main__":
     data = yaml_load(filepath)
     #pp.pprint(data)
     pp.pprint(data[2]["scenario"])
-    if data[5]["scenario"] == "PART":
-        print "Sc.5 is PART"
-    #yaml_dump("dump.yml", data)
+    if data[6]["scenario"] == "PART":
+        print "Sc.6 is PART"
+    print yaml.dump(data)

@@ -38,7 +38,12 @@
       }
       //exec_flag=0;
       console.log("Call to exec with n="+n);
-      command = $("#txt_"+n).val();
+      var command_json = {}
+      command_json["command"] = $("#command_"+n).val();
+      if (document.getElementById("args_"+n) != null) {
+        command_json["args"] = JSON.parse($("#args_"+n).val());
+      }
+      command = JSON.stringify(command_json)
       console.log("Executing command "+command);
       // Disable button
       $("#exec_button_"+n).prop( "disabled", true );

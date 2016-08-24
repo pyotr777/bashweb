@@ -1,56 +1,54 @@
 1:
   html: envvars_block.html
-  scenario: NEXT
+  scenario: "NEXT"
   command: "#SETVARS"
-  arguments:
-    - KP_SELF_CERT: ""
-    - KP_WEB_DNS: ""
-    - KP_WEB_MAIL:""
+  allowed_vars:
+    KP_SELF_CERT: ""
+    KP_WEB_DNS: "localhost"
+    KP_WEB_MAIL: ""
   discription: "Set environnment vars"
 2:
   html: command_block.html
-  scenario: NEXT
+  scenario: "NEXT"
   command: ./test_long.sh
   discription: "Long test"
 3:
   html: command_block.html
-  scenario: NEXT
+  scenario: "NEXT"
   command: env | grep "KP_"
   discription: "Check KP_* envvars"
 4:
   html: save_to_xml.html
-  scenario: NEXT
+  scenario: "NEXT"
   command: "#XML"
-  arguments: 
-  - filename: ../config.xml
+  filepath: ../config.xml
   discription: Edit kp_server configuration file
 5:
   html: command_block.html
-  scenario: STOP
+  scenario: "STOP"
   command: ./disp.sh
   discription: "Display test"
 6:
   html: command_block.html
-  scenario: PART
+  scenario: "PART"
   command: ls -l /etc/
   discription: "ls /etc"
 7:
   html: save_to_xml.html
-  scenario: PART
+  scenario: "PART"
   command: "#XML"
-  arguments:
-    - filename: ../config.xml
+  filepath: ../config.xml
   discription: "Edit kp_server configuration file"
 8:
   html: command_block.html
-  scenario: PART
+  scenario: "PART"
   command: ./disp.sh
   discription: "Display test"
 9:
   html: command_block.html
-  scenario: STOP
+  scenario: "STOP"
   command: ps ax | grep webint
   discription: "Check that webint server is runnning"
 10:
-  scenario: STOP
+  scenario: "STOP"
   command: "#SHUTDOWN"
