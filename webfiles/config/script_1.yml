@@ -35,14 +35,25 @@
   discription: "Check that Docker is running"
 -
   html: command_block.html
-  scenario: "STOP"
+  scenario: "NEXT"
   command: /home/ubuntu/kportal/start_apache.sh 9005
   discription: "Check that Apache is running"
 -
   html: command_block.html
   scenario: "PART"
+  command: "#SHUTDOWN"
+  discription: "Stop webint server"
+-
+  html: redirect_block.html
+  scenario: "STOP"
+  discription: "Load Configuration screen"
+
+-
+  html: command_block.html
+  scenario: "PART"
   command: sudo lsof -i -n -P | grep --color ":80 \|:8080 \|:443 \|:9004 \|:9005 \|:9555 "
   discription: "Display running web services"
+  comment: Beginning of configuration screen
 -
   html: command_block.html
   scenario: "PART"

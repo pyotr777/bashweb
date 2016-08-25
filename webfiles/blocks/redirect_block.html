@@ -1,14 +1,17 @@
+<!-- Redirect to next block -->
 <div class="default">
-    Redirecting to DISCRIPTION
-    <input type=hidden id="txt_NNN" value="COMMAND" />
+    <div class=block_title>DISCRIPTION</div>
+    <button class="hidden_button" id="exec_button_NNN" onclick="redirect()">exec</button>
 </div>
 <script>
+    var i = NNN;
     function init_block() {
-      console.log("Init in redirect block.")
-      exec(NNN);
-      console.log("ExeNNN sent.");
-      URL = "https://"+window.location.hostname+":9005";
-      window.setTimeout(function(){ window.location = URL }, 3000);
+        $("#exec_button_NNN").attr('class', 'active_button');
+    }
+    function redirect() {
+        var counter=NNN;
+        counter++;
+        window.location = "/next?counter="+counter;
     }
 init_block();
 </script>

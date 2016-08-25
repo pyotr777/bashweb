@@ -45,7 +45,7 @@ try:
 except:
     script_number = 2
 
-html_base = "index.html"
+html_base = "index2.html"
 static_folder = web_folder+"/static"
 blocks_folder = web_folder+"/blocks"
 config_folder = web_folder+"/config"
@@ -536,6 +536,9 @@ def getNext(counter=None, result="", session="", force_next=False):
         print "No more commands"
         # Shutdown if counter > block list length and previous command was STOP
         if prev_scenario == "STOP":
+            shutdown()
+        if counter > len(config):
+            # Jumped to nonexisting command, shutdown server.
             shutdown()
 
     # Check next scenario

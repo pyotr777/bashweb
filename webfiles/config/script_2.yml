@@ -31,9 +31,14 @@
   discription: "Display test : python processes"
 -
   html: command_block.html
-  scenario: "STOP"
+  scenario: "PART"
   command: "#SHUTDOWN"
   discription: "Stop webint server"
+-
+  html: redirect_block.html
+  scenario: "STOP"
+  discription: "Configuration screen"
+
 -
   html: command_block.html
   scenario: "PART"

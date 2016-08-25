@@ -534,6 +534,9 @@ def getNext(counter=None, result="", session="", force_next=False):
         # Shutdown if counter > block list length and previous command was STOP
         if prev_scenario == "STOP":
             shutdown()
+        if counter > len(config):
+            # Jumped to nonexisting command, shutdown server.
+            shutdown()
 
     # Check next scenario
     scenario = config[configCounter(counter)]["scenario"]
