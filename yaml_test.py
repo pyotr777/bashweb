@@ -18,10 +18,13 @@ def yaml_dump(filepath, data):
 
 if __name__ == "__main__":
     pp = pprint.PrettyPrinter(indent=4)
-    filepath = "./webfiles/static/config/script_2.yml"
+    filepath = "./webfiles/config/script_3.yml"
     data = yaml_load(filepath)
-    #pp.pprint(data)
-    pp.pprint(data[2]["scenario"])
-    if data[6]["scenario"] == "PART":
-        print "Sc.6 is PART"
+    print "-------"
+    pp.pprint(data)
+    print "-------"
+    pp.pprint(data[0])
+    print data[6]["scenario"]
+    print "-------"
+    print len(data)
     print yaml.dump(data)

@@ -7,7 +7,11 @@
     KP_WEB_DNS: "localhost"
     KP_WEB_MAIL: ""
   discription: "Set environnment vars"
-
+-
+  html: command_block.html
+  scenario: "NEXT"
+  command: ./test_long.sh
+  discription: "Long test"
 -
   html: command_block.html
   scenario: "NEXT"
@@ -27,8 +31,8 @@
 -
   html: command_block.html
   scenario: "NEXT"
-  command: echo $TERM; ps ax | grep --color python
-  discription: "Display test : python processes"
+  command: ./disp.sh
+  discription: "Display test"
 -
   html: command_block.html
   scenario: "STOP"
@@ -39,22 +43,6 @@
   scenario: "PART"
   command: ls -l /etc/
   discription: "ls /etc"
--
-  html: save_to_xml.html
-  scenario: "PART"
-  command: "#XML"
-  filepath: ../config.xml
-  discription: "Edit kp_server configuration file"
--
-  html: command_block.html
-  scenario: "PART"
-  command: ./disp.sh
-  discription: "Display test"
--
-  html: command_block.html
-  scenario: "PART"
-  command: ps ax | grep webint
-  discription: "Check that webint server is runnning"
 -
   html: command_block.html
   scenario: "STOP"

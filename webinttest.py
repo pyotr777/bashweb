@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.10alpha-2"
+ver = "0.11beta-1"
 
 import bottle
 import subprocess
@@ -223,7 +223,7 @@ def exe(ws):
         ws.send("#NEXT"+next_block)
         print "Next block sent"
         return
-    command = config[counter]["command"]
+    command = config[configCounter(counter)]["command"]
     print "command\t" + command
     if command == "#SETVARS":
         print "setvars"
@@ -232,8 +232,8 @@ def exe(ws):
         if parsed_yaml["args"] is not None:
             print "args=" + str(parsed_yaml["args"])
             print "Allowed vars:"
-            print config[counter]["allowed_vars"]
-        parseVars(parsed_yaml["args"],config[counter]["allowed_vars"],session)
+            print config[configCounter(counter)]["allowed_vars"]
+        parseVars(parsed_yaml["args"],config[configCounter(counter)]["allowed_vars"],session)
         # Create output file 
         outfilename = outputFileName(session,counter)
         output_file_handler = open(outfilename,'w')
@@ -347,12 +347,12 @@ def edit_xml(command_n):
     if counter is None or int(counter) is None:
         return returnError(out, err, session, "Error: no counter in command to /xml/edit: " + command_n, counter)
 
-    command = config[counter]["command"]
+    command = config[configCounter(counter)]["command"]
     print "command\t" + command
         
-    if config[counter]["filepath"] is None  or len(config[counter]["filepath"]) < 1:
+    if config[configCounter(counter)]["filepath"] is None  or len(config[configCounter(counter)]["filepath"]) < 1:
         return returnError(out, err, session,"Filepath for command "+str(counter)+" not set in configuration script.", counter)
-    filepath = config[counter]["filepath"]
+    filepath = config[configCounter(counter)]["filepath"]
     
     print "["+str(pid)+"]Editing "+filepath
     # Open file
@@ -514,15 +514,13 @@ def getNext(counter=None, result="", session="", force_next=False):
     if counter is None:
         print >> sys.stderr, "["+str(pid)+"] Error: no counter in getNext"
         return 0,""
-    else:
-        counter = int(counter)
-
+   
     scenario = "NEXT"
     prev_scenario = "NEXT"
     print "Configuration has " + str(len(config)) + " commands."
 
     if counter > 1 and counter-1 < len(config):
-        prev_scenario =  config[counter-1]["scenario"] #scenario_list[counter-2]
+        prev_scenario =  config[configCounter(counter-1)]["scenario"] #scenario_list[counter-2]
 
     print "["+str(pid)+"]Get next ("+str(counter)+") session="+session+"."
     print "Previous scenario command was " + str(prev_scenario)
@@ -541,7 +539,7 @@ def getNext(counter=None, result="", session="", force_next=False):
             shutdown()
 
     # Check next scenario
-    scenario = config[counter]["scenario"]
+    scenario = config[configCounter(counter)]["scenario"]
     print "This scenario command is " + str(scenario)
     if prev_scenario == "PART" and not force_next:
         # Do not load next block if for PART command came not from /next (with force_next)
@@ -587,7 +585,7 @@ def getNext(counter=None, result="", session="", force_next=False):
 
     if not use_saved_block:
         # Use raw block
-        block_f = blocks_folder+"/" + config[counter]["html"]
+        block_f = blocks_folder+"/" + config[configCounter(counter)]["html"]
         print "["+str(pid)+"]Use raw block " + block_f
         div_block_h = open(block_f)
         div = div_block_h.read()
@@ -597,7 +595,7 @@ def getNext(counter=None, result="", session="", force_next=False):
         # And command  - use counter instead of command intself for rsecurity reasons.
         div = re.sub(r'COMMAND',str(counter),div)
         # Discription
-        div = re.sub(r'DISCRIPTION',config[counter]["discription"],div)
+        div = re.sub(r'DISCRIPTION',config[configCounter(counter)]["discription"],div)
         if session != "":
             # Save block to file blockNNN.html
             outfilename = os.path.join(sessionDir(session),"block_" + str(counter) + ".html")
@@ -613,10 +611,17 @@ def getNext(counter=None, result="", session="", force_next=False):
     if scenario == "PART":
         print "Proceed to next block " + str(counter+1)
         result = result + "<div class=displayblock id=out" + str(counter) + "></div>\n"
-        counter, result = getNext(counter+1, result, session, force_next)
+        counter, result = getNext(counter+1, result, session, True)
 
     return counter, result
 # End of getNext(counter=None, result="")
+
+
+# Translate block counter into numbering in config YAML.
+# In YAML block numbers begin with 0.
+# In brower block numbers start from 1.
+def configCounter(counter):
+    return int(counter - 1)
 
 
 # Rreturn javascript for refreshing current div
