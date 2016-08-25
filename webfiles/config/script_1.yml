@@ -1,0 +1,91 @@
+1:
+  html: envvars_block.html
+  scenario: "NEXT"
+  command: "#SETVARS"
+  allowed_vars:
+    KP_SELF_CERT: ""
+    KP_WEB_DNS: "localhost"
+    KP_WEB_MAIL: ""
+  discription: "Set environnment variabless"
+2:
+  html: command_block.html
+  scenario: "NEXT"
+  command: env | grep "KP_"
+  discription: "Check K-portal environment variables"
+3:
+  html: command_block.html
+  scenario: "NEXT"
+  command: /home/ubuntu/kportal/installkportal_ubuntu.sh
+  discription: "Start installation"
+4:
+  html: save_to_xml.html
+  scenario: "NEXT"
+  command: "#XML"
+  filepath: /etc/kportal/www/config.xml
+  discription: "Edit K-portal configuration file config.xml"
+5:
+  html: command_block.html
+  scenario: "NEXT"
+  command: sudo -E su kportal -c "kp_server.sh 9004 -tls"
+  discription: "Start kp_server"
+6:
+  html: command_block.html
+  scenario: "NEXT"
+  command: start_server.sh
+  discription: "Check that Docker is running"
+7:
+  html: command_block.html
+  scenario: "STOP"
+  command: /home/ubuntu/kportal/start_apache.sh 9005
+  discription: "Check that Apache is running"
+8:
+  html: command_block.html
+  scenario: "PART"
+  command: sudo lsof -i -n -P | grep --color ":80\|:443\|:9004\|:9005\|:9555"
+  discription: "Display running web services"
+9:
+  html: command_block.html
+  scenario: "PART"
+  command: cat /etc/kportal/kportal_conf.xml
+  discription: "Display kp_server configuration file kportal_conf.xml"
+10:
+  html: command_block.html
+  scenario: "PART"
+  command: cat /etc/kportal/www/config.xml
+  discription: "Display K-portal configuration file config.xml"
+11:
+  html: save_to_xml.html
+  scenario: "PART"
+  command: "#XML"
+  filepath: /etc/kportal/www/config.xml
+  discription: "Edit K-portal configuration file config.xml"
+12:
+  html: command_block.html
+  scenario: "PART"
+  command: /home/ubuntu/kportal/start_apache.sh 9005
+  discription: "Restart Apache web server"
+13:
+  html: command_block.html
+  scenario: "PART"
+  command: sudo -E su kportal -c "kp_server.sh 9004 -tls"
+  discription: Restart kp_server
+14:
+  html: command_block.html
+  scenario: "PART"
+  command: tail -500 /home/kportal/log/stdout.log | tail 
+  discription: View kp_server stdout logs
+15:
+  html: command_block.html
+  scenario: "PART"
+  command: tail -500 /home/kportal/log/stderr.log | tail 
+  discription: View kp_server stderr logs
+16:
+  html: command_block.html
+  scenario: "PART"
+  command: tail -500 /home/kportal/log/docker.log | tail 
+  discription: View Docker logs
+17:
+  html: command_block.html
+  scenario: "STOP"
+  command: #SHUTDOWN
+  discription: Shutdown server

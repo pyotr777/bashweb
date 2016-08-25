@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.10alpha-1"
+ver = "0.10alpha-2"
 
 import bottle
 import subprocess
@@ -47,15 +47,17 @@ except:
 
 html_base = "index.html"
 static_folder = web_folder+"/static"
+blocks_folder = web_folder+"/blocks"
+config_folder = web_folder+"/config"
 default_block = web_folder+"/default.html"
 WS_alive = []  # List of sessions with open WS connections
 pid = os.getpid()
-sleep_time = 0.05 # Pause length in seconds.
+sleep_time = 0.01 # Pause length in seconds.
 
 
 # CONFIGURATION (workflow) initialisation
 # Read command_list, descrition list and block list from tsv file "script.tsv"
-with open(static_folder+"/config/script_"+str(script_number)+".yml", 'r') as script:
+with open(config_folder+"/script_"+str(script_number)+".yml", 'r') as script:
     config = yaml.load(script)
 
 
@@ -242,7 +244,7 @@ def exe(ws):
         print "Next block sent"
         return
 
-    if command == "shutdown":
+    if command == "#SHUTDOWN":
         print "Got shutdown command."
         shutdown(session)
         return
@@ -527,14 +529,14 @@ def getNext(counter=None, result="", session="", force_next=False):
         else:
             print "Forced to next block"
 
-    if counter > len(config):        
+    if counter >= len(config):
         print "No more commands"
         # Shutdown if counter > block list length and previous command was STOP
         if prev_scenario == "STOP":
             shutdown()
 
     # Check next scenario
-    scenario =  config[counter]["scenario"]
+    scenario = config[counter]["scenario"]
     print "This scenario command is " + str(scenario)
     if prev_scenario == "PART" and not force_next:
         # Do not load next block if for PART command came not from /next (with force_next)
@@ -580,7 +582,7 @@ def getNext(counter=None, result="", session="", force_next=False):
 
     if not use_saved_block:
         # Use raw block
-        block_f = web_folder+"/" + config[counter]["html"]
+        block_f = blocks_folder+"/" + config[counter]["html"]
         print "["+str(pid)+"]Use raw block " + block_f
         div_block_h = open(block_f)
         div = div_block_h.read()

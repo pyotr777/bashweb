@@ -25,30 +25,42 @@
   discription: Edit kp_server configuration file
 5:
   html: command_block.html
-  scenario: "STOP"
+  scenario: "PART"
   command: ./disp.sh
   discription: "Display test"
 6:
   html: command_block.html
+  scenario: "NEXT"
+  command: ./disp.sh
+  discription: "Display test"
+7:
+  html: command_block.html
+  scenario: "STOP"
+  command: "#SHUTDOWN"
+  discription: "Stop webint server"
+8:
+  html: command_block.html
   scenario: "PART"
   command: ls -l /etc/
   discription: "ls /etc"
-7:
+9:
   html: save_to_xml.html
   scenario: "PART"
   command: "#XML"
   filepath: ../config.xml
   discription: "Edit kp_server configuration file"
-8:
+10:
   html: command_block.html
   scenario: "PART"
   command: ./disp.sh
   discription: "Display test"
-9:
+11:
   html: command_block.html
-  scenario: "STOP"
+  scenario: "PART"
   command: ps ax | grep webint
   discription: "Check that webint server is runnning"
-10:
+12:
+  html: command_block.html
   scenario: "STOP"
   command: "#SHUTDOWN"
+  discription: "Stop webint server"
