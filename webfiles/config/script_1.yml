@@ -41,7 +41,7 @@
 8:
   html: command_block.html
   scenario: "PART"
-  command: sudo lsof -i -n -P | grep --color ":80\|:443\|:9004\|:9005\|:9555"
+  command: sudo lsof -i -n -P | grep --color ":80 \|:8080 \|:443 \|:9004 \|:9005 \|:9555 "
   discription: "Display running web services"
 9:
   html: command_block.html
@@ -62,30 +62,35 @@
 12:
   html: command_block.html
   scenario: "PART"
+  command: start_server.sh
+  discription: "Start Docker daemon on port 9555"
+13:
+  html: command_block.html
+  scenario: "PART"
   command: /home/ubuntu/kportal/start_apache.sh 9005
   discription: "Restart Apache web server"
-13:
+14:
   html: command_block.html
   scenario: "PART"
   command: sudo -E su kportal -c "kp_server.sh 9004 -tls"
   discription: Restart kp_server
-14:
-  html: command_block.html
-  scenario: "PART"
-  command: tail -500 /home/kportal/log/stdout.log | tail 
-  discription: View kp_server stdout logs
 15:
   html: command_block.html
   scenario: "PART"
-  command: tail -500 /home/kportal/log/stderr.log | tail 
-  discription: View kp_server stderr logs
+  command: tail -500 /home/kportal/log/stdout.log
+  discription: View kp_server stdout logs
 16:
   html: command_block.html
   scenario: "PART"
-  command: tail -500 /home/kportal/log/docker.log | tail 
-  discription: View Docker logs
+  command: tail -500 /home/kportal/log/stderr.log
+  discription: View kp_server stderr logs
 17:
+  html: command_block.html
+  scenario: "PART"
+  command: tail -500 /home/kportal/log/docker.log
+  discription: View Docker logs
+18:
   html: command_block.html
   scenario: "STOP"
   command: #SHUTDOWN
-  discription: Shutdown server
+  discription: Shutdown webint server
