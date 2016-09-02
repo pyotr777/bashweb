@@ -61,6 +61,7 @@ div.displayblock {
     background-color: #eee;
     max-height: 300px;
     padding:3px;
+    overflow-x:hidden;
 }
 
 button {

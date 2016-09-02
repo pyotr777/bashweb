@@ -97,7 +97,7 @@
     // stdout, strerr, next
     function parseData(data, n) {
       console.log("Call parse data with " + n);
-      console.log("Raw data: "+data);
+      console.log("Raw data: "+data.substring(0,80) + "...");
 
       // Create #outNNN div if necessary
       var div_id="out"+n;
@@ -111,7 +111,8 @@
       $("#out"+n).animate({ scrollTop: $('#out'+n).prop("scrollHeight")}, 10);
       $("#out"+n).append("<div class=stderr>"+obj.stderr+"</div>");
       $("body").append(obj.next);
-      window.scrollTo(0,document.body.scrollHeight);
+      next_elem = $("#block_" + (n+1))
+      scrollTo(next_elem);
     }
 
     function ExecOnServer(DNS, command, n) {
@@ -137,6 +138,22 @@
       }
     }
 
+    // Scroll to the bottom of element.
+    // Element in jQuery notation.
+    function scrollTo(elm) {
+      var height = elm.height();
+
+      var viewport = $(window).height();
+      viewport = 0;
+      var top = elm.offset().top;
+      var scrollPos = top  - viewport + height;
+      console.log("h:" + height + " t:" + top + " viewp:"+viewport);
+      console.log("Scrolling to element "+ elm.attr('id') + ". Position: " + scrollPos);
+      $('html, body').animate({
+        scrollTop: scrollPos
+      }, 1000);
+    }
+
 
     function gotData(data,n) {
       console.log('gotData: ' + data.substring(0,80)+"...");
@@ -145,7 +162,10 @@
       if (data.indexOf(next_block_key)==0) {
         data = data.replace(next_block_key,"");
         $("body").append(data);
-        window.scrollTo(0,document.body.scrollHeight);
+        next_elm = $("#block_"+ (n+1));
+        if (next_elm) {
+          window.scrollTo(next_elm);
+        }
         return;
       }
 
