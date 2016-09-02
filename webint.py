@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.11beta-1"
+ver = "0.11beta-2"
 
 import bottle
 import subprocess
@@ -204,7 +204,7 @@ def exe(ws):
       
     if session_name not in WS_alive:
         WS_alive.append(session_name)
-    print "WEB SOCKET for "+session_name+"\topen"
+    print "WEB SOCKET for "+session_name+" open"
     msg = ws.receive()
     if msg is None or len(msg) == 0:
         print "Error: Null command in /exe"
@@ -214,15 +214,24 @@ def exe(ws):
         return
 
     parsed_yaml = yaml.safe_load(msg)
-    print "Received message"
-    print yaml.dump(parsed_yaml)
+    print "Received message "+yaml.dump(parsed_yaml)
     counter = int(parsed_yaml["command"])
+    print str(counter) +"/" + str(len(config))
     if counter is None or int(counter) is None:
         print "Error: no counter in message to WS: " + msg
         counter, next_block=getNext(session=session)
         ws.send("#NEXT"+next_block)
         print "Next block sent"
         return
+    if counter > len(config):
+        print "No more commands"
+        # Shutdown if counter > block list length and previous command was STOP
+        if prev_scenario == "STOP":
+            shutdown()
+        if counter > len(config):
+            # Jumped to nonexisting command, shutdown server.
+            shutdown()
+
     command = config[configCounter(counter)]["command"]
     print "command\t" + command
     if command == "#SETVARS":

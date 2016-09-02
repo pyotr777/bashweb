@@ -38,18 +38,14 @@
   html: redirect_block.html
   scenario: "STOP"
   discription: "Configuration screen"
+  command: "/next?counter=8"
 
 -
   html: command_block.html
   scenario: "PART"
   command: ls -l /etc/
   discription: "ls /etc"
--
-  html: save_to_xml.html
-  scenario: "PART"
-  command: "#XML"
-  filepath: ../config.xml
-  discription: "Edit kp_server configuration file"
+
 -
   html: command_block.html
   scenario: "PART"
@@ -58,10 +54,19 @@
 -
   html: command_block.html
   scenario: "PART"
-  command: ps ax | grep webint
+  command: "ps ax | grep webint"
   discription: "Check that webint server is runnning"
 -
   html: command_block.html
-  scenario: "STOP"
+  scenario: "PART"
   command: "#SHUTDOWN"
-  discription: "Stop webint server"
+  discription: Shutdown webint server
+-
+  html: message_block.html
+  scenario: "PART"
+  discription: "Message test"
+-
+  html: redirect_block.html
+  scenario: "STOP"
+  discription: "Open K-portal"
+  command: "https://\"+window.location.hostname+\":9005"

@@ -1,3 +1,4 @@
+# 1
 -
   html: envvars_block.html
   scenario: "NEXT"
@@ -39,15 +40,20 @@
   command: /home/ubuntu/kportal/start_apache.sh 9005
   discription: "Check that Apache is running"
 -
+  html: message_block.html
+  scenario: "PART"
+  discription: "K-portal installation is complete"
+-
   html: command_block.html
   scenario: "PART"
   command: "#SHUTDOWN"
   discription: "Stop webint server"
+# 10
 -
   html: redirect_block.html
   scenario: "STOP"
   discription: "Load Configuration screen"
-
+  command: "/next?counter=11"
 -
   html: command_block.html
   scenario: "PART"
@@ -95,6 +101,7 @@
   scenario: "PART"
   command: tail -500 /home/kportal/log/stderr.log
   discription: View kp_server stderr logs
+# 20
 -
   html: command_block.html
   scenario: "PART"
@@ -102,6 +109,12 @@
   discription: View Docker logs
 -
   html: command_block.html
-  scenario: "STOP"
-  command: #SHUTDOWN
+  scenario: "PART"
+  command: "#SHUTDOWN"
   discription: Shutdown webint server
+-
+  html: redirect_block.html
+  scenario: "STOP"
+  discription: "Open K-portal"
+  command: "https://\"+window.location.hostname+\":9005"
+
