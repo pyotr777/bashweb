@@ -7,7 +7,7 @@
     KP_SELF_CERT: ""
     KP_WEB_DNS: "localhost"
     KP_WEB_MAIL: ""
-  discription: "Set environnment variabless"
+  discription: "Set environment variabless"
 -
   html: command_block.html
   scenario: "NEXT"

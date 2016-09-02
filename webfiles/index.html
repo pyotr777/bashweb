@@ -3,6 +3,8 @@
 <head>
   <link rel="stylesheet" href="/static/style.css">
   <script src="/static/jquery/jquery-3.0.0.js"></script>
+  <link href="/static/jquery-ui-1.12.0/jquery-ui.css" rel="stylesheet">
+  <script src="/static/jquery-ui-1.12.0/jquery-ui.js"></script>
   <script>
     var connection;
     var exec_flag=1;  // Prevent double execution of same command
@@ -46,7 +48,8 @@
       command = JSON.stringify(command_json)
       console.log("Executing command "+command);
       // Disable button
-      $("#exec_button_"+n).prop( "disabled", true );
+      $("#exec_button_"+n).prop("disabled", true );
+      $("#exec_button_"+n).addClass("inactive_button");
       // Send the command to the server
       ExecOnServer(DNS, command, n);
       //setTimeout(function(){ exec_flag=1;}, 100)
@@ -136,7 +139,7 @@
 
 
     function gotData(data,n) {
-      console.log('gotData: ' + data);
+      console.log('gotData: ' + data.substring(0,80)+"...");
 
       // Check if we have new block
       if (data.indexOf(next_block_key)==0) {
@@ -150,17 +153,30 @@
       var div_id="out"+n;
       div = document.getElementById(div_id);
       if (div === null) {
-        $("body").append("<div class=displayblock id="+div_id+"></div>")
+        console.log("Append div " + div_id);
+        $("body").append("<div class=displayblock class=ui-widget-content id="+div_id+"></div>");
+      } else {
+        console.log("Element "+div_id+" exists");
+        console.log(div.innerHTML);        
+      }
+      jdiv = $("#"+div_id); // change to jQuery object
+      if (jdiv.resizable_flag) {
+        console.log(".");
+      } else {
+        jdiv.addClass("ui-widget-content");
+        jdiv.resizable({handles: "s"});
+        jdiv.resizable_flag=1;
+        console.log(div_id+" made resizable : "+ jdiv.resizable_flag);
       }
 
       if (data.indexOf(stderr_key)==0) {
         data = data.replace(stderr_key,"")
-        $("#out"+n).append("<div class=stderr>"+data+"</div>");
-        $("#out"+n).scrollTop($('#out'+n).prop("scrollHeight"));
+        jdiv.append("<div class=stderr>"+data+"</div>");
+        jdiv.scrollTop(div.prop("scrollHeight"));
       } else {
         //data = escape(data);
-        $("#out"+n).append(data);
-        $("#out"+n).scrollTop($('#out'+n).prop("scrollHeight"));
+        jdiv.append(data);
+        jdiv.scrollTop($('#'+div_id).prop("scrollHeight"));
       }
     }
 
@@ -181,9 +197,10 @@
 </head>
 <body>
 <h1 id="start">K-portal installation</h1>
-<!--a href="/next?counter=10" class="button shutdown" title="Stop installation server">Stop</a-->
-<a href="/next?counter=11" class="button config" title="Configuration and Troubleshooting screen">Configuration</a>
-<a href="/" class="button restart">Restart session</a>
-<div style="clear:both;"></div>
+<div class="container">
+  <a href="/next?counter=35" class="button shutdown" title="Stop installation server">Stop</a>
+  <a href="/next?counter=11" class="button config" title="Configuration and Troubleshooting screen">Configuration</a>
+  <a href="/" class="button restart">Restart session</a>
+</div>
 </body>
 </html>

@@ -1,11 +1,13 @@
 <div class="default">
     <div class=block_title>DISCRIPTION</div>
-    Web socket URI:
-    <input id="txt1_NNN" type="text" name="/configuration/websocket/uri" size="70"/><br>
-    Google API clientID:
-    <input id="txt2_NNN" type="text" name="/configuration/oauth20/clientid"  size="70"/><br>
-    Google API redirect URL:
-    <input id="txt3_NNN" type="text" name="/configuration/oauth20/redirect"  size="70"/>
+    <div>
+        <label class="long">Web socket URI:</label>    
+        <input id="txt1_NNN" type="text" name="/configuration/websocket/uri" size="70"/><br>
+        <label class="long">Google API clientID:</label>
+        <input id="txt2_NNN" type="text" name="/configuration/oauth20/clientid"  size="70"/><br>
+        <label class="long">Google API redirect URL:</label>
+        <input id="txt3_NNN" type="text" name="/configuration/oauth20/redirect"  size="70"/>
+    </div>
     <button class="hidden_button" id="exec_button_NNN" onclick="post_form(NNN)">exec</button>
 </div>
 <script>

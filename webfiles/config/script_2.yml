@@ -6,7 +6,7 @@
     KP_SELF_CERT: ""
     KP_WEB_DNS: "localhost"
     KP_WEB_MAIL: ""
-  discription: "Set environnment vars"
+  discription: "Set environment vars"
 
 -
   html: command_block.html
@@ -43,8 +43,8 @@
 -
   html: command_block.html
   scenario: "PART"
-  command: ls -l /etc/
-  discription: "ls /etc"
+  command: "echo -e \"one\ntwo\n3\""
+  discription: "echo -e \"one\ntwo\n3\""
 
 -
   html: command_block.html
