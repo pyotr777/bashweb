@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.11beta-2"
+ver = "0.11beta-3"
 
 import bottle
 import subprocess
@@ -231,6 +231,7 @@ def exe(ws):
         if counter > len(config):
             # Jumped to nonexisting command, shutdown server.
             shutdown()
+
     command = config[configCounter(counter)]["command"]
     print "command\t" + command
     if command == "#SETVARS":

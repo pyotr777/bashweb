@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.11beta-2"
+ver = "0.11beta-3"
 
 import bottle
 import subprocess
@@ -602,9 +602,11 @@ def getNext(counter=None, result="", session="", force_next=False):
         # Replace default IDs with block unique IDs
         div = re.sub(r'NNN',str(counter),div)
         # And command  - use counter instead of command intself for rsecurity reasons.
-        div = re.sub(r'COMMAND',str(counter),div)
+        if "command" in config[configCounter(counter)]:
+            div = re.sub(r'COMMAND',config[configCounter(counter)]["command"],div)
         # Discription
-        div = re.sub(r'DISCRIPTION',config[configCounter(counter)]["discription"],div)
+        if "discription" in config[configCounter(counter)]:
+            div = re.sub(r'DISCRIPTION',config[configCounter(counter)]["discription"],div)
         if session != "":
             # Save block to file blockNNN.html
             outfilename = os.path.join(sessionDir(session),"block_" + str(counter) + ".html")
