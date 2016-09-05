@@ -103,7 +103,7 @@
       var div_id="out"+n;
       div = document.getElementById(div_id);
       if (div === null) {
-        $("body").append("<div class=displayblock id="+div_id+"></div>")
+        $("body").append("<div class=displayblock id="+div_id+" ></div>")
       }
 
       var obj = JSON.parse(data);
@@ -112,7 +112,7 @@
       $("#out"+n).append("<div class=stderr>"+obj.stderr+"</div>");
       $("body").append(obj.next);
       next_elem = $("#block_" + (n+1))
-      scrollTo(next_elem);
+      scrollTo(next_elem, 1000);
     }
 
     function ExecOnServer(DNS, command, n) {
@@ -138,23 +138,30 @@
       }
     }
 
+
     // Scroll to the bottom of element.
     // Element in jQuery notation.
-    function scrollTo(elm) {
+    function scrollTo(elm, stime) {
       var height = elm.height();
-
+      var top = elm.offset().top + 15;
       var viewport = $(window).height();
-      viewport = 0;
-      var top = elm.offset().top;
-      var scrollPos = top  - viewport + height;
-      console.log("h:" + height + " t:" + top + " viewp:"+viewport);
-      console.log("Scrolling to element "+ elm.attr('id') + ". Position: " + scrollPos);
-      $('html, body').animate({
-        scrollTop: scrollPos
-      }, 1000);
+      var scroll = $('html, body').scrollTop();
+      console.log("viewp: " + viewport + " scrollTop:" + scroll);
+      console.log("h:" + height + " t:" + top );
+      var scrollPos = top + height;
+      if (scrollPos > viewport + scroll) {
+        scrollPos = scrollPos - viewport;        
+        console.log("Scrolling to element "+ elm.attr('id') + ". Position: " + scrollPos);
+        if (stime > 0) {
+          $('html, body').animate({ scrollTop: scrollPos }, stime);
+        } else {
+          $('html, body').scrollTop(scrollPos);
+        }
+      } 
     }
 
 
+    // Received data from Web Socket
     function gotData(data,n) {
       console.log('gotData: ' + data.substring(0,80)+"...");
 
@@ -164,7 +171,7 @@
         $("body").append(data);
         next_elm = $("#block_"+ (n+1));
         if (next_elm) {
-          window.scrollTo(next_elm);
+          window.scrollTo(next_elm, 1000);
         }
         return;
       }
@@ -174,20 +181,25 @@
       div = document.getElementById(div_id);
       if (div === null) {
         console.log("Append div " + div_id);
-        $("body").append("<div class=displayblock class=ui-widget-content id="+div_id+"></div>");
+        $("body").append("<div class=displayblock class=ui-widget-content id="+div_id+" ></div>");
       } else {
         console.log("Element "+div_id+" exists");
-        console.log(div.innerHTML);        
       }
-      jdiv = $("#"+div_id); // change to jQuery object
+      jdiv = $("#"+div_id); // change to jQuery object 
       
-      if (jdiv.resizable_flag) {
-        console.log(".");
+      if (div.resizable_flag) {
+        console.log( jdiv.attr('id') + ' width: ' + jdiv.width() + ', height: ' + jdiv.height() + "/" + div.last_height);
+        if (div.last_height < jdiv.height()) {
+          console.log("Scrolling to " + jdiv.attr('id'));
+          scrollTo(jdiv,0);
+        }
+        div.last_height = jdiv.height();        
       } else {
         jdiv.addClass("ui-widget-content");
         jdiv.resizable({handles: "s"});
-        jdiv.resizable_flag=1;
-        console.log(div_id+" made resizable : "+ jdiv.resizable_flag);
+        div.resizable_flag=1;
+        console.log(div_id+" made resizable : "+ div.resizable_flag);
+        console.log(div_id+" maxhight is set to : " + jdiv.css('maxHeight'));        
       }
 
       if (data.indexOf(stderr_key)==0) {

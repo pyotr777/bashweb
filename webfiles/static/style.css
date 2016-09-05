@@ -88,7 +88,7 @@ button:hover {
     background-image:    -moz-linear-gradient(top, rgba(236,255,229,1) 0%,rgba(165,227,141,1) 100%);
     background-image:     -ms-linear-gradient(top, rgba(236,255,229,1) 0%,rgba(165,227,141,1) 100%);
     background-image:      -o-linear-gradient(top, rgba(236,255,229,1) 0%,rgba(165,227,141,1) 100%);
-    background-image:         linear-gradient(top, rgba(236,255,229,1) 0%,rgba(165,227,141,1) 100%);ear-gradient(top, rgba(194,241,255,1) 0%,rgba(153,199,235,1) 100%);
+    background-image:         linear-gradient(top, rgba(236,255,229,1) 0%,rgba(165,227,141,1) 100%);
 }
 
 button:active {

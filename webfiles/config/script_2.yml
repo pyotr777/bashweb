@@ -49,6 +49,11 @@
 -
   html: command_block.html
   scenario: "PART"
+  command: ./test_long.sh
+  discription: "Long test"
+-
+  html: command_block.html
+  scenario: "PART"
   command: ./disp.sh
   discription: "Display test"
 -
@@ -65,6 +70,22 @@
   html: message_block.html
   scenario: "PART"
   discription: "Message test"
+
+-
+  html: message_block.html
+  scenario: "PART"
+  discription: "Message test"
+
+-
+  html: message_block.html
+  scenario: "PART"
+  discription: "Message test"
+
+-
+  html: message_block.html
+  scenario: "PART"
+  discription: "Message test"
+
 -
   html: redirect_block.html
   scenario: "STOP"

@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.11beta-3"
+ver = "0.11beta-4"
 
 import bottle
 import subprocess
@@ -577,7 +577,7 @@ def getNext(counter=None, result="", session="", force_next=False):
             if os.path.isfile(output_fname):
                 read_next_block = True  # Get next block if output is saved fully (no run flag)
                 print "-["+str(pid)+"]Reading ouput "+ output_fname
-                output = "<div class=displayblock id=out" + str(counter) + ">" + readOutputFile(output_fname) + "</div>\n"
+                output = "<div class=displayblock id=out" + str(counter) + " >" + readOutputFile(output_fname) + "</div>\n"
                 # Check if this step is in progress (subprocess hasn't finished)
                 # If process is in progress, attach refresh script
                 run_flag = output_fname + "_"
@@ -624,7 +624,7 @@ def getNext(counter=None, result="", session="", force_next=False):
 
     if scenario == "PART":
         print "Proceed to next block " + str(counter+1)
-        result = result + "<div class=displayblock id=out" + str(counter) + "></div>\n"
+        result = result + "<div class=displayblock id=out" + str(counter) + " ></div>\n"
         counter, result = getNext(counter+1, result, session, True)
 
     return counter, result

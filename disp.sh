@@ -17,3 +17,5 @@ echo -en "\033[38;5;50m#####\033[m\n"
 echo -en "python\nprint \"sd\"\n<script> alert(!); </script>\n"
 echo -en "\\ \\\ df\"string? <br/>//&lt;<p>\n"
 echo "KP_VAR is $KP_VAR "
+
+ls -lGa
