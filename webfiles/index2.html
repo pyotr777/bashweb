@@ -103,7 +103,7 @@
       var div_id="out"+n;
       div = document.getElementById(div_id);
       if (div === null) {
-        $("body").append("<div class=displayblock id="+div_id+" ></div>")
+        $("body").append("<div class=displayblock id="+div_id+"></div>")
       }
 
       var obj = JSON.parse(data);
@@ -181,7 +181,7 @@
       div = document.getElementById(div_id);
       if (div === null) {
         console.log("Append div " + div_id);
-        $("body").append("<div class=displayblock class=ui-widget-content id="+div_id+" ></div>");
+        $("body").append("<div class=displayblock class=ui-widget-content id="+div_id+"></div>");
       } else {
         console.log("Element "+div_id+" exists");
       }

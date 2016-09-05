@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.11beta-3"
+ver = "0.11beta-4"
 
 import bottle
 import subprocess
