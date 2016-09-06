@@ -23,7 +23,7 @@
   html: save_to_xml_2.html
   scenario: "PART"
   command: "#XML"
-  filepath: ../kportal_conf2.xml
+  filepath: ../kportal_conf.xml
   discription: "Edit kp_server configuration file kportal_conf.xml"
 -
   html: command_block.html

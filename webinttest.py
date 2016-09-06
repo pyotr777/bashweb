@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.11beta-4"
+ver = "0.11beta-5"
 
 import bottle
 import subprocess
@@ -128,7 +128,7 @@ def readOutputFile(fname):
     print "["+str(pid)+"] No write flag file"
     output_f = open(fname,'r')
     output = output_f.read()
-    output = html_safe(output.decode('utf-8')) 
+    output = html_safe(output.decode('utf-8'))
     # .decode(utf-8) to fix UnicodeDecodeError: 'ascii' codec can't decode byte 0xe2 in position 954875: ordinal not in range(128) error.
 
     output_f.close()
@@ -182,7 +182,7 @@ def next():
         print "Have browser counter " + b_counter
         counter = int(b_counter)
         print "Call getNext with (" + b_counter+", force_next=" + str(True)+ ")"
-        counter, next_block = getNext(counter, result, session,  force_next = True)        
+        counter, next_block = getNext(counter, result, session,  force_next = True)
         #TODO Return next_block with counter in JSON format
         return next_block
     else:
@@ -201,7 +201,7 @@ def exe(ws):
     else:
         print "["+str(pid)+"]No session"
         session_name="nosession"
-      
+
     if session_name not in WS_alive:
         WS_alive.append(session_name)
     print "WEB SOCKET for "+session_name+" open"
@@ -243,7 +243,7 @@ def exe(ws):
             print "Allowed vars:"
             print config[configCounter(counter)]["allowed_vars"]
         parseVars(parsed_yaml["args"],config[configCounter(counter)]["allowed_vars"],session)
-        # Create output file 
+        # Create output file
         outfilename = outputFileName(session,counter)
         output_file_handler = open(outfilename,'w')
         print "SETVARS output saved to " + outfilename
@@ -270,7 +270,7 @@ def exe(ws):
     counter, next_block=getNext(counter+1, session=session)
     ws.send("#NEXT"+next_block)
     print "Next block sent"
-    WS_alive.remove(session_name)    
+    WS_alive.remove(session_name)
     return
 # End def exe(ws)
 
@@ -358,11 +358,11 @@ def edit_xml(command_n):
 
     command = config[configCounter(counter)]["command"]
     print "command\t" + command
-        
+
     if config[configCounter(counter)]["filepath"] is None  or len(config[configCounter(counter)]["filepath"]) < 1:
         return returnError(out, err, session,"Filepath for command "+str(counter)+" not set in configuration script.", counter)
     filepath = config[configCounter(counter)]["filepath"]
-    
+
     print "["+str(pid)+"]Editing "+filepath
     # Open file
     if filepath.find("/") != 0:
@@ -376,20 +376,20 @@ def edit_xml(command_n):
     keys = bottle.request.forms.keys()
     for key in keys:
         val = bottle.request.forms.get(key)
-        print "Looking for " + str(key)
         try:
             node = f.xpath(key)
-            print "[]Found"
-            print str(type(node[0])) 
-            print node[0]
             if type(node[0]) is etree._Element:
-                print "Have Element"
+                # XML node element
                 node[0].text = val
             elif type(node[0]) is etree._ElementStringResult:
-                print "Have string"
-                node[0] = val
-            print "Set to " + val
+                # XML tag element
+                parent = node[0].getparent()
+                # Get tag name
+                parts = key.split("@")
+                tagname = parts[len(parts)-1]
+                parent.set(tagname, val)
         except etree.XPathEvalError:
+            print >> err, sys.exc_info()
             return returnError(out, err, session, "Wrong path syntax: " + key, counter)
         except:
             print >> err, sys.exc_info()
@@ -400,14 +400,14 @@ def edit_xml(command_n):
     try:
         fwrt = open(filepath,'w')
     except IOError as ex:
-        return returnError(out, err, session, "Error writing to file " + filepath, counter)        
+        return returnError(out, err, session, "Error writing to file " + filepath, counter)
 
     print >> fwrt, etree.tostring(f)
     fwrt.close()
     print "Wrote XML to " + filepath
     try:
         frd = open(filepath,'r')
-    except IOError as ex:        
+    except IOError as ex:
         return returnError(out, err, session, "Error reading file " + filepath, counter)
 
     new_xml = frd.read()
@@ -522,18 +522,18 @@ def returnError(out, err, session, msg, counter):
 
 
 # Return block with number 'counter' and append it to 'result'.
-# If block is saved (in session folder) use saved version and 
+# If block is saved (in session folder) use saved version and
 # also append saved output if exists.
 def getNext(counter=None, result="", session="", force_next=False):
     global config
-    
+
     print "Force next is " + str(force_next)
     # Flag if we in FastForward mode and need next block
     read_next_block = False
     if counter is None:
         print >> sys.stderr, "["+str(pid)+"] Error: no counter in getNext"
         return 0,""
-   
+
     scenario = "NEXT"
     prev_scenario = "NEXT"
     print "Configuration has " + str(len(config)) + " commands."
@@ -543,7 +543,7 @@ def getNext(counter=None, result="", session="", force_next=False):
 
     print "["+str(pid)+"]Get next ("+str(counter)+") session="+session+"."
     print "Previous scenario command was " + str(prev_scenario)
-    
+
     if prev_scenario == "STOP":
         print "Stop command"
         if not force_next:
@@ -587,7 +587,7 @@ def getNext(counter=None, result="", session="", force_next=False):
             if os.path.isfile(output_fname):
                 read_next_block = True  # Get next block if output is saved fully (no run flag)
                 print "-["+str(pid)+"]Reading ouput "+ output_fname
-                output = "<div class=displayblock id=out" + str(counter) + " >" + readOutputFile(output_fname) + "</div>\n"
+                output = "<div class=displayblock id=out" + str(counter) + ">" + readOutputFile(output_fname) + "</div>\n"
                 # Check if this step is in progress (subprocess hasn't finished)
                 # If process is in progress, attach refresh script
                 run_flag = output_fname + "_"
@@ -634,7 +634,7 @@ def getNext(counter=None, result="", session="", force_next=False):
 
     if scenario == "PART":
         print "Proceed to next block " + str(counter+1)
-        result = result + "<div class=displayblock id=out" + str(counter) + " ></div>\n"
+        result = result + "<div class=displayblock id=out" + str(counter) + "></div>\n"
         counter, result = getNext(counter+1, result, session, True)
 
     return counter, result
@@ -663,7 +663,7 @@ def RefreshScript(session, counter):
                         setTimeout( refreshDiv, 2000);
                         console.log("Output updated. Refreshing in 2 sec.");
                     }
-                });                
+                });
             }
         };
         if (active_refresh) {
@@ -696,10 +696,10 @@ def closeOutputFile(f_handle):
 
 
 # Set envvars.
-# Arguments format: 
+# Arguments format:
 # args = {'key':'value', ...}
 # allowed = {'var':'default value', ...}
-# 
+#
 # Add allowed assignment to env_vars.
 # Save variables in dictionary with session name.
 # If no session provided use "nosession" name.
@@ -730,7 +730,7 @@ def Execute(command) :
     print "Executing " + command
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     output = [l.decode('utf8') for l in proc.stdout.readlines()]
-    err = [l.decode('utf8') for l in proc.stderr.readlines()]    
+    err = [l.decode('utf8') for l in proc.stderr.readlines()]
     return (output, err)
 
 
