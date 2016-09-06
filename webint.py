@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.11beta-5"
+ver = "0.11beta-6"
 
 import bottle
 import subprocess
@@ -488,6 +488,8 @@ def handleProcessOutput(proc, ws, counter,session=""):
             except WebSocketError as ex:
                 print "Web socket died."
                 WS_alive.remove(session_name)
+        else :
+            print session_name + " not in " + str(WS_alive)
         print line,
         if session != "":
             print >> output_file_handler, line,

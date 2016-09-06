@@ -197,6 +197,7 @@
       if (div === null) {
         console.log("Append div " + div_id);
         $("body").append("<div class=displayblock class=ui-widget-content id="+div_id+"></div>");
+        div = document.getElementById(div_id);
       } else {
         console.log("Element "+div_id+" exists");
       }
