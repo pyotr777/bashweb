@@ -32,6 +32,13 @@
       return ""
     }
 
+    // Set exec button to disable state
+    function disableButton(button) {
+      button.prop("disabled", true );
+      button.removeClass("active_button");
+      button.addClass("inactive_button");
+    }
+
     // Call from text field #n
     function exec(n) {
       if (!exec_flag) {
@@ -48,13 +55,11 @@
       command = JSON.stringify(command_json)
       console.log("Executing command "+command);
       // Disable button
-      $("#exec_button_"+n).prop("disabled", true );
-      $("#exec_button_"+n).addClass("inactive_button");
+      disableButton($("#exec_button_"+n));
       // Send the command to the server
       ExecOnServer(DNS, command, n);
       //setTimeout(function(){ exec_flag=1;}, 100)
     }
-
 
     // Called from blocks save_to_xml on [exec] command click.
     function post_form(n) {
@@ -68,7 +73,7 @@
       console.log("Calling "+ PATH)
       console.log("Disable button #exec_button_" + n)
       // Disable button
-      $("#exec_button_"+n).prop( "disabled", true );
+      disableButton($("#exec_button_"+n));
 
       var formData = {};
       // Select all <input type="text"> tags
@@ -111,6 +116,10 @@
       $("#out"+n).animate({ scrollTop: $('#out'+n).prop("scrollHeight")}, 10);
       $("#out"+n).append("<div class=stderr>"+obj.stderr+"</div>");
       $("body").append(obj.next);
+      this_elm = $("#out"+ n);
+      console.log("unset max-height of " + this_elm.attr('id'));
+      this_elm.css('max-height', 'none');
+      console.log("h: " + this_elm.height());
       next_elem = $("#block_" + (n+1))
       scrollTo(next_elem, 1000);
     }
@@ -146,7 +155,7 @@
       var top = elm.offset().top + 15;
       var viewport = $(window).height();
       var scroll = $('html, body').scrollTop();
-      console.log("viewp: " + viewport + " scrollTop:" + scroll);
+      console.log(elm.attr('id')+ " viewp: " + viewport + " scrollTop:" + scroll);
       console.log("h:" + height + " t:" + top );
       var scrollPos = top + height;
       if (scrollPos > viewport + scroll) {
@@ -169,9 +178,15 @@
       if (data.indexOf(next_block_key)==0) {
         data = data.replace(next_block_key,"");
         $("body").append(data);
+        this_elm = $("#out"+ n);
+        var h = this_elm.height();
+        this_elm.height(h);
+        this_elm.css('max-height', 'none');        
+        console.log("Set max-height of ("+n+") " + this_elm.attr('id') + " to " + this_elm.css("max-height"));
+        console.log("h: " + this_elm.height());
         next_elm = $("#block_"+ (n+1));
         if (next_elm) {
-          window.scrollTo(next_elm, 1000);
+          window.scrollTo(next_elm, 1000);          
         }
         return;
       }
@@ -199,7 +214,7 @@
         jdiv.resizable({handles: "s"});
         div.resizable_flag=1;
         console.log(div_id+" made resizable : "+ div.resizable_flag);
-        console.log(div_id+" maxhight is set to : " + jdiv.css('maxHeight'));        
+        console.log(div_id+" maxhight is set to : " + jdiv.css('maxHeight') + "/ " + jdiv.css("max-height"));        
       }
 
       if (data.indexOf(stderr_key)==0) {
@@ -232,7 +247,7 @@
 <h1 id="start">K-portal installation II</h1>
 <div class="container">
   <a href="/next?counter=30" class="button shutdown" title="Stop installation server">Stop</a>
-  <a href="/next?counter=8" class="button config" title="Configuration and Troubleshooting screen">Configuration</a>
+  <a href="/next?counter=9" class="button config" title="Configuration and Troubleshooting screen">Configuration</a>
   <a href="/" class="button restart">Restart session</a>
 </div>
 </body>

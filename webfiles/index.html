@@ -32,6 +32,12 @@
       return ""
     }
 
+    // Set exec button to disable state
+    function disableButton(button) {
+      button.prop("disabled", true );
+      button.removeClass("active_button");
+      button.addClass("inactive_button");
+    }
     // Call from text field #n
     function exec(n) {
       if (!exec_flag) {
@@ -48,8 +54,7 @@
       command = JSON.stringify(command_json)
       console.log("Executing command "+command);
       // Disable button
-      $("#exec_button_"+n).prop("disabled", true );
-      $("#exec_button_"+n).addClass("inactive_button");
+      disableButton($("#exec_button_"+n));
       // Send the command to the server
       ExecOnServer(DNS, command, n);
       //setTimeout(function(){ exec_flag=1;}, 100)
@@ -68,7 +73,7 @@
       console.log("Calling "+ PATH)
       console.log("Disable button #exec_button_" + n)
       // Disable button
-      $("#exec_button_"+n).prop( "disabled", true );
+      disableButton($("#exec_button_"+n));
 
       var formData = {};
       // Select all <input type="text"> tags
