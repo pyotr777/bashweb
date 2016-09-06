@@ -1,0 +1,22 @@
+<div class="default" id="block_NNN">
+    <div class=block_title>DISCRIPTION</div>
+    <div>
+        <label class="long">Sample Image ID</label>    
+        <input id="txt1_NNN" type="text" name="/Data/Image/@id" size="70"/><br>
+        <label class="long">Sample Image tag</label>
+        <input id="txt2_NNN" type="text" name="/Data/Test"  size="70"/><br>
+        
+    </div>
+    <button class="hidden_button" id="exec_button_NNN" onclick="post_form(NNN)">exec</button>
+</div>
+<script>
+var submittable=true; // Flag to prevent multiple "form" submissions
+
+function init_block() {
+    console.log("save_to_xml");    
+    $("#exec_button_NNN").attr('class', 'active_button');
+    $("#txt1_NNN").focus();
+}
+
+init_block();
+</script>

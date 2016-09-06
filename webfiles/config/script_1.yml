@@ -63,6 +63,11 @@
 -
   html: command_block.html
   scenario: "PART"
+  command: docker -H localhost:9555 images
+  discription: "Display Docker images list"
+-
+  html: command_block.html
+  scenario: "PART"
   command: cat /etc/kportal/kportal_conf.xml
   discription: "Display kp_server configuration file kportal_conf.xml"
 -
@@ -71,8 +76,15 @@
   command: cat /etc/kportal/www/config.xml
   discription: "Display K-portal configuration file config.xml"
 -
-  html: save_to_xml.html
+  html: save_to_xml_2.html
   scenario: "PART"
+  command: "#XML"
+  filepath: /etc/kportal/kportal_conf.xml
+  discription: "Edit kp_server configuration file kportal_conf.xml"
+
+-
+  html: save_to_xml.html
+  scenario: "NEXT"
   command: "#XML"
   filepath: /etc/kportal/www/config.xml
   discription: "Edit K-portal configuration file config.xml"

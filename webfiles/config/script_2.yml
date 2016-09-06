@@ -20,6 +20,12 @@
   filepath: ../config.xml
   discription: Edit kp_server configuration file
 -
+  html: save_to_xml_2.html
+  scenario: "PART"
+  command: "#XML"
+  filepath: ../kportal_conf2.xml
+  discription: "Edit kp_server configuration file kportal_conf.xml"
+-
   html: command_block.html
   scenario: "PART"
   command: ./disp.sh
@@ -38,8 +44,7 @@
   html: redirect_block.html
   scenario: "STOP"
   discription: "Configuration screen"
-  command: "/next?counter=8"
-
+  command: "/next?counter=9"
 -
   html: command_block.html
   scenario: "PART"

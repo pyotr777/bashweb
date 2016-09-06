@@ -376,9 +376,19 @@ def edit_xml(command_n):
     keys = bottle.request.forms.keys()
     for key in keys:
         val = bottle.request.forms.get(key)
+        print "Looking for " + str(key)
         try:
             node = f.xpath(key)
-            node[0].text = val
+            print "[]Found"
+            print str(type(node[0])) 
+            print node[0]
+            if type(node[0]) is etree._Element:
+                print "Have Element"
+                node[0].text = val
+            elif type(node[0]) is etree._ElementStringResult:
+                print "Have string"
+                node[0] = val
+            print "Set to " + val
         except etree.XPathEvalError:
             return returnError(out, err, session, "Wrong path syntax: " + key, counter)
         except:
