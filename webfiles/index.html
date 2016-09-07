@@ -3,8 +3,6 @@
 <head>
   <link rel="stylesheet" href="/static/style.css">
   <script src="/static/jquery/jquery-3.0.0.js"></script>
-  <link href="/static/jquery-ui-1.12.0/jquery-ui.css" rel="stylesheet">
-  <script src="/static/jquery-ui-1.12.0/jquery-ui.js"></script>
   <script>
     var connection;
     var exec_flag=1;  // Prevent double execution of same command
@@ -38,6 +36,7 @@
       button.removeClass("active_button");
       button.addClass("inactive_button");
     }
+
     // Call from text field #n
     function exec(n) {
       if (!exec_flag) {
@@ -59,7 +58,6 @@
       ExecOnServer(DNS, command, n);
       //setTimeout(function(){ exec_flag=1;}, 100)
     }
-
 
     // Called from blocks save_to_xml on [exec] command click.
     function post_form(n) {
@@ -83,9 +81,9 @@
         var patrn = new RegExp("_"+n+"$");
         res = id.match(patrn);
         if (res != null) {
-          console.log("Found " + res)
+          //console.log("Found " + res)
           formData[$(this).attr("name")] = $(this).val();
-        } 
+        }
         // else {
         //   console.log(id + " didnt match ")
         // }
@@ -113,9 +111,13 @@
 
       var obj = JSON.parse(data);
       $("#out"+n).html("<div class=output>"+obj.stdout+"</div>");
-      $("#out"+n).animate({ scrollTop: $('#out'+n).prop("scrollHeight")}, 10);
+      //$("#out"+n).animate({ scrollTop: $('#out'+n).prop("scrollHeight")}, 10);
       $("#out"+n).append("<div class=stderr>"+obj.stderr+"</div>");
       $("body").append(obj.next);
+      this_elm = $("#out"+ n);
+      console.log("unset max-height of " + this_elm.attr('id'));
+      this_elm.css('max-height', 'none');
+      //console.log("h: " + this_elm.height());
       next_elem = $("#block_" + (n+1))
       scrollTo(next_elem, 1000);
     }
@@ -150,20 +152,25 @@
       var height = elm.height();
       var top = elm.offset().top + 15;
       var viewport = $(window).height();
-      var scroll = $('html, body').scrollTop();
-      console.log("viewp: " + viewport + " scrollTop:" + scroll);
-      console.log("h:" + height + " t:" + top );
+      var scroll = $(window).scrollTop();
+      console.log("scrollTo with "+ elm.attr('id')+ " stime="+stime+" viewp: " + viewport + " scrollTop:" + scroll);
+      //console.log("h:" + height + " t:" + top );
       var scrollPos = top + height;
       if (scrollPos > viewport + scroll) {
-        scrollPos = scrollPos - viewport;        
+        scrollPos = scrollPos - viewport;
         console.log("Scrolling to element "+ elm.attr('id') + ". Position: " + scrollPos);
-        if (stime > 0) {
-          $('html, body').animate({ scrollTop: scrollPos }, stime);
+        if (scrollPos > scroll) { // Do not scroll up
+          if (stime > 0) {
+            $('html, body').animate({ scrollTop: scrollPos }, stime);
+          } else {
+            $('html, body').scrollTop(scrollPos);
+          }
         } else {
-          $('html, body').scrollTop(scrollPos);
+          console.log("Not scrolling up");
         }
-      } 
+      }
     }
+
     // Received data from Web Socket
     function gotData(data,n) {
       console.log('gotData: ' + data.substring(0,80)+"...");
@@ -172,9 +179,17 @@
       if (data.indexOf(next_block_key)==0) {
         data = data.replace(next_block_key,"");
         $("body").append(data);
+        this_elm = $("#out"+ n);
+        if (this_elm.length > 0) {
+          var h = this_elm.height();
+          this_elm.height(h);
+          this_elm.css('max-height', 'none');
+          console.log("Set max-height of ("+n+") " + this_elm.attr('id') + " to " + this_elm.css("max-height"));
+          console.log("h: " + this_elm.height());
+        }
         next_elm = $("#block_"+ (n+1));
         if (next_elm) {
-          window.scrollTo(next_elm, 1000);
+          scrollTo(next_elm, 1000);
         }
         return;
       }
@@ -184,37 +199,28 @@
       div = document.getElementById(div_id);
       if (div === null) {
         console.log("Append div " + div_id);
-        $("body").append("<div class=displayblock class=ui-widget-content id="+div_id+"></div>");
+        $("body").append("<div class=displayblock id="+div_id+"></div>");
         div = document.getElementById(div_id);
       } else {
         console.log("Element "+div_id+" exists");
       }
-      jdiv = $("#"+div_id); // change to jQuery object 
-      
-      if (div.resizable_flag) {
-        console.log( jdiv.attr('id') + ' width: ' + jdiv.width() + ', height: ' + jdiv.height() + "/" + div.last_height);
-        if (div.last_height < jdiv.height()) {
-          console.log("Scrolling to " + jdiv.attr('id'));
-          scrollTo(jdiv,0);
-        }
-        div.last_height = jdiv.height();        
-      } else {
-        jdiv.addClass("ui-widget-content");
-        jdiv.resizable({handles: "s"});
-        div.resizable_flag=1;
-        console.log(div_id+" made resizable : "+ div.resizable_flag);
-        console.log(div_id+" maxhight is set to : " + jdiv.css('maxHeight'));        
+      jdiv = $("#"+div_id); // change to jQuery object
+
+      //console.log( jdiv.attr('id') + ' width: ' + jdiv.width() + ', height: ' + jdiv.height() + "/" + div.last_height);
+      if (div.last_height < jdiv.height()) {
+        console.log("Scrolling to " + jdiv.attr('id'));
+        scrollTo(jdiv,0);
       }
+      div.last_height = jdiv.height();
 
       if (data.indexOf(stderr_key)==0) {
         data = data.replace(stderr_key,"")
         jdiv.append("<div class=stderr>"+data+"</div>");
-        jdiv.scrollTop(div.prop("scrollHeight"));
       } else {
         //data = escape(data);
         jdiv.append(data);
-        jdiv.scrollTop($('#'+div_id).prop("scrollHeight"));
       }
+      jdiv.scrollTop(jdiv.prop("scrollHeight"));
     }
 
 
@@ -236,7 +242,7 @@
 <h1 id="start">K-portal installation</h1>
 <div class="container">
   <a href="/next?counter=35" class="button shutdown" title="Stop installation server">Stop</a>
-  <a href="/next?counter=11" class="button config" title="Configuration and Troubleshooting screen">Configuration</a>
+  <a href="/next?counter=12" class="button config" title="Configuration and Troubleshooting screen">Configuration</a>
   <a href="/" class="button restart">Restart session</a>
 </div>
 </body>

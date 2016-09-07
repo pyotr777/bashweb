@@ -1,6 +1,7 @@
 body {
     font-family: Helvetica, Arial, sans-serif;
     font-size: 10pt;
+    margin-right:16px;
 }
 
 h1 {
@@ -72,7 +73,11 @@ div.displayblock {
     background-color: #eee;
     max-height: 300px;
     padding:3px;
-    overflow-x:hidden;
+    overflow:scroll;
+    resize: vertical;
+    -webkit-box-shadow: inset 0px 1px 2px 0px rgba(0,0,0,0.1);
+    -moz-box-shadow: inset 0px 1px 2px 0px rgba(0,0,0,0.1);
+    box-shadow: inset 0px 1px 2px 0px rgba(0,0,0,0.1);
 }
 
 button {

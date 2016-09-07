@@ -51,9 +51,14 @@
 # 10
 -
   html: redirect_block.html
+  scenario: "PART"
+  discription: "Open K-portal"
+  command: "https://\"+window.location.hostname+\":9005"
+-
+  html: redirect_block.html
   scenario: "STOP"
   discription: "Load Configuration screen"
-  command: "/next?counter=11"
+  command: "/next?counter=12"
 -
   html: command_block.html
   scenario: "PART"
@@ -98,6 +103,7 @@
   scenario: "PART"
   command: /home/ubuntu/kportal/start_apache.sh 9005
   discription: "Restart Apache web server"
+#20
 -
   html: command_block.html
   scenario: "PART"
@@ -113,7 +119,6 @@
   scenario: "PART"
   command: tail -500 /home/kportal/log/stderr.log
   discription: View kp_server stderr logs
-# 20
 -
   html: command_block.html
   scenario: "PART"

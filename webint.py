@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.11beta-6"
+ver = "0.11beta-7"
 
 import bottle
 import subprocess
@@ -361,6 +361,7 @@ def edit_xml(command_n):
     if config[configCounter(counter)]["filepath"] is None  or len(config[configCounter(counter)]["filepath"]) < 1:
         return returnError(out, err, session,"Filepath for command "+str(counter)+" not set in configuration script.", counter)
     filepath = config[configCounter(counter)]["filepath"]
+
     print "["+str(pid)+"]Editing "+filepath
     # Open file
     if filepath.find("/") != 0:
@@ -594,7 +595,7 @@ def getNext(counter=None, result="", session="", force_next=False):
                     print "-["+str(pid)+"]Run flag found: " + run_flag
                     read_next_block = False
                     refresh_script = RefreshScript(session, str(counter))
-                    print "Attaching refresh script to putput"
+                    print "Attaching refresh script to output"
                     output = output + refresh_script
                 # Append output to result
                 result = result + output
@@ -602,7 +603,7 @@ def getNext(counter=None, result="", session="", force_next=False):
             # Need next block
             # ! INDENTION SHOULD BE SAME AS if os.path.isfile(output_fname):
             if read_next_block:
-                counter, result = getNext(counter+1, result, session, force_next)
+                counter, result = getNext(counter+1, result, session, True)
 
     if not use_saved_block:
         # Use raw block
