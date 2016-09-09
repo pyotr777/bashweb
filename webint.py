@@ -3,7 +3,7 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.11beta-7"
+ver = "0.11beta-8"
 
 import bottle
 import subprocess
@@ -125,12 +125,11 @@ def readOutputFile(fname):
         print "["+str(pid)+"] Write flag found: " + write_flag
         while os.path.isfile(write_flag):
             sleep(0.1)
-    print "["+str(pid)+"] No write flag file"
+    print "No write flag file"
     output_f = open(fname,'r')
     output = output_f.read()
     output = html_safe(output.decode('utf-8'))
     # .decode(utf-8) to fix UnicodeDecodeError: 'ascii' codec can't decode byte 0xe2 in position 954875: ordinal not in range(128) error.
-
     output_f.close()
     return output
 
@@ -284,6 +283,8 @@ def getEnvVars(session=""):
         dict_name = "nosession"
     else:
         dict_name = session
+        if dict_name not in env_vars:
+            env_vars[session] = dict()
     return env_vars[dict_name]
 
 
@@ -313,8 +314,9 @@ def readoutput():
     out = ""
     if os.path.isfile(output_fname):
         #print "Found "+output_fname
+        # html_safe applied inside readOutputFile function
         out = readOutputFile(output_fname)
-        # If process is in progress, attache refresh script
+        # If process is in progress, do not attach stop_script
         run_flag = output_fname + "_"
         if os.path.isfile(run_flag):
             print "Run flag found: " + run_flag
@@ -411,7 +413,7 @@ def edit_xml(command_n):
 
     new_xml = frd.read()
     frd.close()
-    print >> out, html_safe(new_xml)
+    print >> out, new_xml,
 
     if session != "":
         # Open output file
@@ -429,7 +431,7 @@ def edit_xml(command_n):
     out.close()
     err.close()
 
-    return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block, 'counter': counter})
+    return json.dumps({'stdout':html_safe(stdout), 'stderr':html_safe(stderr), 'next': next_block, 'counter': counter})
 # End def edit_xml(command_n)
 
 
@@ -518,7 +520,7 @@ def returnError(out, err, session, msg, counter):
     out.close()
     err.close()
     counter, next_block = getNext(counter, session=session)
-    return json.dumps({'stdout':stdout, 'stderr':stderr, 'next': next_block, 'counter': counter})
+    return json.dumps({'stdout':html_safe(stdout), 'stderr':html_safe(stderr), 'next': next_block, 'counter': counter})
 
 
 # Return block with number 'counter' and append it to 'result'.
@@ -527,7 +529,7 @@ def returnError(out, err, session, msg, counter):
 def getNext(counter=None, result="", session="", force_next=False):
     global config
     
-    print "Force next is " + str(force_next)
+    print "["+str(pid)+"]Get next ("+str(counter)+"), force " + str(force_next)
     # Flag if we in FastForward mode and need next block
     read_next_block = False
     if counter is None:
@@ -541,7 +543,7 @@ def getNext(counter=None, result="", session="", force_next=False):
     if counter > 1 and counter-1 < len(config):
         prev_scenario =  config[configCounter(counter-1)]["scenario"] #scenario_list[counter-2]
 
-    print "["+str(pid)+"]Get next ("+str(counter)+") session="+session+"."
+    print "session="+session
     print "Previous scenario command was " + str(prev_scenario)
     
     if prev_scenario == "STOP":
@@ -614,9 +616,9 @@ def getNext(counter=None, result="", session="", force_next=False):
         div_block_h.close()
         # Replace default IDs with block unique IDs
         div = re.sub(r'NNN',str(counter),div)
-        # And command  - use counter instead of command intself for rsecurity reasons.
-        if "command" in config[configCounter(counter)]:
-            div = re.sub(r'COMMAND',config[configCounter(counter)]["command"],div)
+        # Replace RE_URL placeholder with URL for redirection.
+        if "url" in config[configCounter(counter)]:
+            div = re.sub(r'RE_URL',config[configCounter(counter)]["url"],div)
         # Discription
         if "discription" in config[configCounter(counter)]:
             div = re.sub(r'DISCRIPTION',config[configCounter(counter)]["discription"],div)
@@ -632,11 +634,12 @@ def getNext(counter=None, result="", session="", force_next=False):
         # Append to result
         result = result + div
 
+    scenario = config[configCounter(counter)]["scenario"]
     if scenario == "PART":
         print "Proceed to next block " + str(counter+1)
         result = result + "<div class=displayblock id=out" + str(counter) + "></div>\n"
         counter, result = getNext(counter+1, result, session, True)
-
+    print "End of getNext "+ str(counter)
     return counter, result
 # End of getNext(counter=None, result="")
 
@@ -680,7 +683,7 @@ def openOutputFile(outfilename):
     flag_filename = outfilename+"_W"
     FF_h = open(flag_filename,'w')
     FF_h.close()
-    output_file = open(outfilename, 'a')
+    output_file = open(outfilename, 'w')
     #print "Write output to " + outfilename
     return output_file
 

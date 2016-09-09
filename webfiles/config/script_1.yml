@@ -52,13 +52,13 @@
 -
   html: redirect_block.html
   scenario: "PART"
-  discription: "Open K-portal"
-  command: "https://\"+window.location.hostname+\":9005"
+  discription: "Open K-portal in a new window"
+  url: "https://\"+window.location.hostname+\":9005"
 -
   html: redirect_block.html
   scenario: "STOP"
-  discription: "Load Configuration screen"
-  command: "/next?counter=12"
+  discription: "Open Configuration screen in a new window"
+  url: "/next?counter=12"
 -
   html: command_block.html
   scenario: "PART"
@@ -132,6 +132,6 @@
 -
   html: redirect_block.html
   scenario: "STOP"
-  discription: "Open K-portal"
-  command: "https://\"+window.location.hostname+\":9005"
+  discription: "Open K-portal in a new window"
+  url: "https://\"+window.location.hostname+\":9005"
 

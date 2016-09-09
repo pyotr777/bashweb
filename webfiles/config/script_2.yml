@@ -46,12 +46,12 @@
   html: redirect_block.html
   scenario: "PART"
   discription: "Open K-portal"
-  command: "https://\"+window.location.hostname+\":9005"
+  url: "https://\"+window.location.hostname+\":9005"
 -
   html: redirect_block.html
   scenario: "STOP"
   discription: "Configuration screen"
-  command: "/next?counter=10"
+  url: "/next?counter=10"
 #10
 -
   html: command_block.html
@@ -78,11 +78,11 @@
   scenario: "PART"
   command: "#SHUTDOWN"
   discription: Shutdown webint server
+#15
 -
   html: message_block.html
   scenario: "PART"
   discription: "Message test"
-#15
 -
   html: message_block.html
   scenario: "PART"
@@ -102,4 +102,4 @@
   html: redirect_block.html
   scenario: "STOP"
   discription: "Open K-portal"
-  command: "https://\"+window.location.hostname+\":9005"
+  url: "https://\"+window.location.hostname+\":9005"
