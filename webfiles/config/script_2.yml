@@ -7,67 +7,67 @@
     KP_SELF_CERT: ""
     KP_WEB_DNS: "localhost"
     KP_WEB_MAIL: ""
-  discription: "Set environment vars"
+  description: "Set environment vars"
 -
   html: command_block.html
   scenario: "NEXT"
   command: env | grep "KP_"
-  discription: "Check KP_* envvars"
+  description: "Check KP_* envvars"
 -
   html: save_to_xml.html
   scenario: "NEXT"
   command: "#XML"
   filepath: ../config.xml
-  discription: Edit kp_server configuration file
+  description: Edit kp_server configuration file
 -
   html: save_to_xml_2.html
   scenario: "PART"
   command: "#XML"
   filepath: ../kportal_conf.xml
-  discription: "Edit kp_server configuration file kportal_conf.xml"
+  description: "Edit kp_server configuration file kportal_conf.xml"
 
 #5
 -
   html: command_block.html
   scenario: "PART"
   command: ./disp.sh
-  discription: "Display test"
+  description: "Display test"
 -
   html: command_block.html
   scenario: "NEXT"
   command: echo $TERM; ps ax | grep --color python
-  discription: "Display test : python processes"
+  description: "Display test : python processes"
 -
   html: command_block.html
   scenario: "PART"
   command: "#SHUTDOWN"
-  discription: "Stop webint server"
+  description: "Stop webint server"
 -
   html: redirect_block.html
   scenario: "PART"
-  discription: "Open K-portal"
+  description: "Open K-portal"
   url: "https://\"+window.location.hostname+\":9005"
 -
   html: redirect_block.html
   scenario: "STOP"
-  discription: "Configuration screen"
+  description: "Configuration screen"
   url: "/next?counter=10"
 
 #10
 - html: default.html
   scenario: "PART"
   command: "echo \"Mail is: $mail\""
-  discription: "Display command args"
+  description: "Display command args"
 -
   html: command_block.html
   scenario: "PART"
   command: echo "sudo su kportal -c 'kp_tool view_admins'"
-  discription: "List K-portal admins"
+  description: "List K-portal admins"
 -
   html: default.html
   scenario: "PART"
   command: echo "sudo su kportal -c 'kp_tool -e $mail add_admins'"
-  discription: "Add K-portal admin"
+  description: "Add K-portal admin"
 -
   html: envvars_block.html
   scenario: "PART"
@@ -76,54 +76,54 @@
     KP_SELF_CERT: ""
     KP_WEB_DNS: "localhost"
     KP_WEB_MAIL: ""
-  discription: "Set environment vars"
+  description: "Set environment vars"
 -
   html: command_block.html
   scenario: "PART"
   command: "echo -e \"one\ntwo\n3\""
-  discription: "echo -e \"one\ntwo\n3\""
+  description: "echo -e \"one\ntwo\n3\""
 -
   html: command_block.html
   scenario: "PART"
   command: ./test_long.sh
-  discription: "Long test"
+  description: "Long test"
 
 #15
 -
   html: command_block.html
   scenario: "PART"
   command: ./disp.sh
-  discription: "Display test"
+  description: "Display test"
 -
   html: command_block.html
   scenario: "PART"
   command: "ps ax | grep webint"
-  discription: "Check that webint server is runnning"
+  description: "Check that webint server is runnning"
 -
   html: command_block.html
   scenario: "PART"
   command: "#SHUTDOWN"
-  discription: Shutdown webint server
+  description: Shutdown webint server
 -
   html: message_block.html
   scenario: "PART"
-  discription: "Message test"
+  description: "Message test"
 -
   html: message_block.html
   scenario: "PART"
-  discription: "Message test"
+  description: "Message test"
 
 #20
 -
   html: message_block.html
   scenario: "PART"
-  discription: "Message test"
+  description: "Message test"
 -
   html: message_block.html
   scenario: "PART"
-  discription: "Message test"
+  description: "Message test"
 -
   html: redirect_block.html
   scenario: "STOP"
-  discription: "Open K-portal"
+  description: "Open K-portal"
   url: "https://\"+window.location.hostname+\":9005"

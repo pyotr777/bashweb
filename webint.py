@@ -629,9 +629,9 @@ def getNext(counter=None, result="", session="", force_next=False):
         # Replace RE_URL placeholder with URL for redirection.
         if "url" in config[configCounter(counter)]:
             div = re.sub(r'RE_URL',config[configCounter(counter)]["url"],div)
-        # Discription
-        if "discription" in config[configCounter(counter)]:
-            div = re.sub(r'DISCRIPTION',config[configCounter(counter)]["discription"],div)
+        # Description
+        if "description" in config[configCounter(counter)]:
+            div = re.sub(r'DESCRIPTION',config[configCounter(counter)]["description"],div)
         if session != "":
             # Save block to file blockNNN.html
             outfilename = os.path.join(sessionDir(session),"block_" + str(counter) + ".html")

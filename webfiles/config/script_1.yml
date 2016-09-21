@@ -7,105 +7,105 @@
     KP_SELF_CERT: ""
     KP_WEB_DNS: "localhost"
     KP_WEB_MAIL: ""
-  discription: "Set environment variabless"
+  description: "Set environment variabless"
 -
   html: command_block.html
   scenario: "NEXT"
   command: env | grep "KP_"
-  discription: "Check K-portal environment variables"
+  description: "Check K-portal environment variables"
 -
   html: command_block.html
   scenario: "NEXT"
   command: /home/ubuntu/kportal/installkportal_ubuntu.sh
-  discription: "Start installation"
+  description: "Start installation"
 -
   html: save_to_xml.html
   scenario: "NEXT"
   command: "#XML"
   filepath: /etc/kportal/www/config.xml
-  discription: "Edit K-portal configuration file config.xml"
+  description: "Edit K-portal configuration file config.xml"
 
 #5
 -
   html: command_block.html
   scenario: "NEXT"
   command: sudo -E su kportal -c "kp_server.sh 9004 -tls"
-  discription: "Start kp_server"
+  description: "Start kp_server"
 -
   html: command_block.html
   scenario: "NEXT"
   command: start_server.sh
-  discription: "Check that Docker is running"
+  description: "Check that Docker is running"
 -
   html: command_block.html
   scenario: "NEXT"
   command: /home/ubuntu/kportal/start_apache.sh 9005
-  discription: "Check that Apache is running"
+  description: "Check that Apache is running"
 -
   html: message_block.html
   scenario: "PART"
-  discription: "K-portal installation is complete"
+  description: "K-portal installation is complete"
 -
   html: command_block.html
   scenario: "PART"
   command: "#SHUTDOWN"
-  discription: "Stop webint server"
+  description: "Stop webint server"
 
 # 10
 -
   html: redirect_block.html
   scenario: "PART"
-  discription: "Open K-portal in a new window"
+  description: "Open K-portal in a new window"
   url: "https://\"+window.location.hostname+\":9005"
 -
   html: redirect_block.html
   scenario: "STOP"
-  discription: "Open Configuration screen in a new window"
+  description: "Open Configuration screen in a new window"
   url: "/next?counter=12"
 -
   html: command_block.html
   scenario: "PART"
   command: sudo lsof -i -n -P | grep --color ":80 \|:8080 \|:443 \|:9004 \|:9005 \|:9555 "
-  discription: "Display running web services"
+  description: "Display running web services"
   comment: Beginning of configuration screen
 -
   html: command_block.html
   scenario: "PART"
   command: sudo su kportal -c 'kp_tool view_admins'
-  discription: "List K-portal admins"
+  description: "List K-portal admins"
 -
   html: default.html
   scenario: "PART"
   command: sudo su kportal -c 'kp_tool -e $mail add_admins'
-  discription: "Add K-portal admin"
+  description: "Add K-portal admin"
 
 #15
 -
   html: default.html
   scenario: "PART"
   command: sudo su kportal -c 'kp_tool -e $mail remove_admins'
-  discription: "Remove K-portal admin"
+  description: "Remove K-portal admin"
 -
   html: command_block.html
   scenario: "PART"
   command: docker -H localhost:9555 images
-  discription: "Display Docker images list"
+  description: "Display Docker images list"
 -
   html: command_block.html
   scenario: "PART"
   command: cat /etc/kportal/kportal_conf.xml
-  discription: "Display kp_server configuration file kportal_conf.xml"
+  description: "Display kp_server configuration file kportal_conf.xml"
 -
   html: command_block.html
   scenario: "PART"
   command: cat /etc/kportal/www/config.xml
-  discription: "Display K-portal configuration file config.xml"
+  description: "Display K-portal configuration file config.xml"
 -
   html: save_to_xml_2.html
   scenario: "PART"
   command: "#XML"
   filepath: /etc/kportal/kportal_conf.xml
-  discription: "Edit kp_server configuration file kportal_conf.xml"
+  description: "Edit kp_server configuration file kportal_conf.xml"
 
 #20
 -
@@ -113,47 +113,47 @@
   scenario: "PART"
   command: "#XML"
   filepath: /etc/kportal/www/config.xml
-  discription: "Edit K-portal configuration file config.xml"
+  description: "Edit K-portal configuration file config.xml"
 -
   html: command_block.html
   scenario: "PART"
   command: start_server.sh
-  discription: "Start Docker daemon on port 9555"
+  description: "Start Docker daemon on port 9555"
 -
   html: command_block.html
   scenario: "PART"
   command: /home/ubuntu/kportal/start_apache.sh 9005
-  discription: "Restart Apache web server"
+  description: "Restart Apache web server"
 -
   html: command_block.html
   scenario: "PART"
   command: sudo -E su kportal -c "kp_server.sh 9004 -tls"
-  discription: "Restart kp_server"
+  description: "Restart kp_server"
 -
   html: command_block.html
   scenario: "PART"
   command: tail -500 /home/kportal/log/stdout.log
-  discription: "View kp_server stdout logs"
+  description: "View kp_server stdout logs"
 
 #25
 -
   html: command_block.html
   scenario: "PART"
   command: tail -500 /home/kportal/log/stderr.log
-  discription: "View kp_server stderr logs"
+  description: "View kp_server stderr logs"
 -
   html: command_block.html
   scenario: "PART"
   command: tail -500 /home/kportal/log/docker.log
-  discription: "View Docker logs"
+  description: "View Docker logs"
 -
   html: command_block.html
   scenario: "PART"
   command: "#SHUTDOWN"
-  discription: "Shutdown webint server"
+  description: "Shutdown webint server"
 -
   html: redirect_block.html
   scenario: "STOP"
-  discription: "Open K-portal in a new window"
+  description: "Open K-portal in a new window"
   url: "https://\"+window.location.hostname+\":9005"
 
