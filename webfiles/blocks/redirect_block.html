@@ -1,17 +1,17 @@
 <!-- Redirect to next block -->
 <div class="default" id="block_NNN">
     <div class=block_title>DISCRIPTION</div>
-    <button class="hidden_button" id="exec_button_NNN" onclick="redirect()">exec</button>
+    <button class="hidden_button" id="exec_button_NNN" onclick="redirect_NNN()">exec</button>
 </div>
 <script>
     var i = NNN;
-    function init_block() {
+    function init_block_NNN() {
         $("#exec_button_NNN").attr('class', 'active_button');
     }
-    function redirect() {
+    function redirect_NNN() {
         var counter=NNN;
         counter++;
         window.open("RE_URL", "_blank");
     }
-init_block();
+init_block_NNN();
 </script>
