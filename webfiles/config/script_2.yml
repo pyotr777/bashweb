@@ -8,7 +8,6 @@
     KP_WEB_DNS: "localhost"
     KP_WEB_MAIL: ""
   discription: "Set environment vars"
-
 -
   html: command_block.html
   scenario: "NEXT"
@@ -26,6 +25,7 @@
   command: "#XML"
   filepath: ../kportal_conf.xml
   discription: "Edit kp_server configuration file kportal_conf.xml"
+
 #5
 -
   html: command_block.html
@@ -52,7 +52,31 @@
   scenario: "STOP"
   discription: "Configuration screen"
   url: "/next?counter=10"
+
 #10
+- html: default.html
+  scenario: "PART"
+  command: "echo \"Mail is: $mail\""
+  discription: "Display command args"
+-
+  html: command_block.html
+  scenario: "PART"
+  command: echo "sudo su kportal -c 'kp_tool view_admins'"
+  discription: "List K-portal admins"
+-
+  html: default.html
+  scenario: "PART"
+  command: echo "sudo su kportal -c 'kp_tool -e $mail add_admins'"
+  discription: "Add K-portal admin"
+-
+  html: envvars_block.html
+  scenario: "PART"
+  command: "#SETVARS"
+  allowed_vars:
+    KP_SELF_CERT: ""
+    KP_WEB_DNS: "localhost"
+    KP_WEB_MAIL: ""
+  discription: "Set environment vars"
 -
   html: command_block.html
   scenario: "PART"
@@ -63,6 +87,8 @@
   scenario: "PART"
   command: ./test_long.sh
   discription: "Long test"
+
+#15
 -
   html: command_block.html
   scenario: "PART"
@@ -78,7 +104,6 @@
   scenario: "PART"
   command: "#SHUTDOWN"
   discription: Shutdown webint server
-#15
 -
   html: message_block.html
   scenario: "PART"
@@ -88,16 +113,15 @@
   scenario: "PART"
   discription: "Message test"
 
+#20
 -
   html: message_block.html
   scenario: "PART"
   discription: "Message test"
-
 -
   html: message_block.html
   scenario: "PART"
   discription: "Message test"
-
 -
   html: redirect_block.html
   scenario: "STOP"

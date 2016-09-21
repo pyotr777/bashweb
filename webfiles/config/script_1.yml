@@ -24,6 +24,8 @@
   command: "#XML"
   filepath: /etc/kportal/www/config.xml
   discription: "Edit K-portal configuration file config.xml"
+
+#5
 -
   html: command_block.html
   scenario: "NEXT"
@@ -48,6 +50,7 @@
   scenario: "PART"
   command: "#SHUTDOWN"
   discription: "Stop webint server"
+
 # 10
 -
   html: redirect_block.html
@@ -68,6 +71,21 @@
 -
   html: command_block.html
   scenario: "PART"
+  command: sudo su kportal -c 'kp_tool view_admins'
+  discription: "List K-portal admins"
+-
+  html: default.html
+  scenario: "PART"
+  command: sudo su kportal -c 'kp_tool -e $mail add_admins'
+  discription: "Add K-portal admin"
+-
+  html: default.html
+  scenario: "PART"
+  command: sudo su kportal -c 'kp_tool -e $mail remove_admins'
+  discription: "Remove K-portal admin"
+-
+  html: command_block.html
+  scenario: "PART"
   command: docker -H localhost:9555 images
   discription: "Display Docker images list"
 -
@@ -75,6 +93,8 @@
   scenario: "PART"
   command: cat /etc/kportal/kportal_conf.xml
   discription: "Display kp_server configuration file kportal_conf.xml"
+
+#15
 -
   html: command_block.html
   scenario: "PART"
@@ -86,10 +106,9 @@
   command: "#XML"
   filepath: /etc/kportal/kportal_conf.xml
   discription: "Edit kp_server configuration file kportal_conf.xml"
-
 -
   html: save_to_xml.html
-  scenario: "NEXT"
+  scenario: "PART"
   command: "#XML"
   filepath: /etc/kportal/www/config.xml
   discription: "Edit K-portal configuration file config.xml"
@@ -103,32 +122,35 @@
   scenario: "PART"
   command: /home/ubuntu/kportal/start_apache.sh 9005
   discription: "Restart Apache web server"
+
 #20
 -
   html: command_block.html
   scenario: "PART"
   command: sudo -E su kportal -c "kp_server.sh 9004 -tls"
-  discription: Restart kp_server
+  discription: "Restart kp_server"
 -
   html: command_block.html
   scenario: "PART"
   command: tail -500 /home/kportal/log/stdout.log
-  discription: View kp_server stdout logs
+  discription: "View kp_server stdout logs"
 -
   html: command_block.html
   scenario: "PART"
   command: tail -500 /home/kportal/log/stderr.log
-  discription: View kp_server stderr logs
+  discription: "View kp_server stderr logs"
 -
   html: command_block.html
   scenario: "PART"
   command: tail -500 /home/kportal/log/docker.log
-  discription: View Docker logs
+  discription: "View Docker logs"
 -
   html: command_block.html
   scenario: "PART"
   command: "#SHUTDOWN"
-  discription: Shutdown webint server
+  discription: "Shutdown webint server"
+
+#25
 -
   html: redirect_block.html
   scenario: "STOP"

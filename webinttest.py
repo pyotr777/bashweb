@@ -3,16 +3,13 @@
 # Web interface for executing shell commands
 # 2016 (C) Bryzgalov Peter @ CHITEC, Stair Lab
 
-ver = "0.11beta-8"
+ver = "0.12beta-1"
 
 import bottle
 import subprocess
-import shlex
 import re
 import string
-import urllib
 import os
-import glob
 import sys
 import json
 from lxml import etree
@@ -261,6 +258,11 @@ def exe(ws):
     merged_env = init_env.copy()
     if session != "":
         merged_env.update(getEnvVars(session))
+
+    # Substitute arguments in command
+    if "args" in parsed_yaml and parsed_yaml["args"] is not None:
+        print "[] Has arguments: " + str(parsed_yaml["args"])
+        command = substituteArgs(command, parsed_yaml["args"])
     print "Exectuing "+command
     #print "Environment " + str(merged_env)
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=merged_env, bufsize=1, shell=True, executable="/bin/bash")
@@ -448,6 +450,15 @@ def serv_static(filepath):
     return bottle.static_file(filepath, root=static_folder)
 
 
+# Substitute $ARG placeholders in command with argument values
+def substituteArgs(command, args):
+    # Loop through parsed object attributes
+    for key, value in args.iteritems():
+            key = str(key)  # Convert from Unicode
+            value = str(value)
+            print "key:"+key + " val:"+ str(value)
+            command = command.replace("$"+key,value)
+    return command
 
 # Return output file name
 def blockFileName(session,counter):
@@ -741,7 +752,7 @@ def Execute(command) :
 # HTML-sanitation
 conv = Ansi2HTMLConverter(inline=True)
 
-# Replace symbols that can distroy html in browser.
+# Replace symbols that can destroy html in browser.
 def html_safe(data):
     data = conv.convert(data,full=False)
     return data

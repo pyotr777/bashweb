@@ -1,16 +1,22 @@
-<div class="default">
-    <input id="txt_NNN" type="text" name="cmd" onchange="exec(NNN)" />
+<div class="default" id="block_NNN">
+    <label>Mail:</label><input id="txt_NNN" type="text" name="cmd" onchange="update_vars_NNN()"  />
+    <input type=hidden id="args_NNN" value="" />
+    <input type=hidden id="command_NNN" value="NNN" />
+    <button class="hidden_button" id="exec_button_NNN" onclick="update_vars_NNN();exec(NNN)">exec</button>
 </div>
 <script>
-    function init_block() {
-        i = NNN
-        console.log("init_block called with i="+i);
-        if (i  > 1) {
-            // Show command in previous text field and disable it
-            $("#txt_"+(i-1)).val("NNN");
-            $("#txt_"+(i-1)).prop('disabled', true);
-        }
+    var JSONobj = {};
+    function init_block_NNN() {
+        console.log("init_block of default block called with i=NNN");
+        $("#exec_button_NNN").attr('class', 'active_button');
         $("#txt_NNN").focus();
     }
-init_block();
+
+    // Send data in JSON format
+    function update_vars_NNN() {
+        JSONobj["mail"] = $("#txt_NNN").val();
+        $("#args_NNN").val(JSON.stringify(JSONobj));
+        console.log("Next command args: "+ $("#args_NNN").val());
+    }
+init_block_NNN();
 </script>

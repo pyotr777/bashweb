@@ -56,7 +56,6 @@
       disableButton($("#exec_button_"+n));
       // Send the command to the server
       ExecOnServer(DNS, command, n);
-      //setTimeout(function(){ exec_flag=1;}, 100)
     }
 
     // Called from blocks save_to_xml on [exec] command click.
@@ -84,9 +83,6 @@
           //console.log("Found " + res)
           formData[$(this).attr("name")] = $(this).val();
         }
-        // else {
-        //   console.log(id + " didnt match ")
-        // }
       });
       console.log(formData);
       $.post(PATH, formData, function(data) {

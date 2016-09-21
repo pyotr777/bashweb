@@ -1,19 +1,18 @@
 <div class="default" id="block_NNN">
     <div class=block_title>DISCRIPTION</div>
-    <p><input type="checkbox" id="use_self_signed" onclick="update_vars()"> Use self signed certificates</p>
+    <p><input type="checkbox" id="use_self_signed" onclick="update_vars_NNN()"> Use self signed certificates</p>
     <div id="SSL_info">
-    <label>DNS:</label><input type="text" id="DNS_txt_NNN" onchange="update_vars()" value="" size="50" /><br>
-    <label>Mail:</label><input type="text" id="MAIL_txt_NNN" onchange="update_vars()" value="kportal.aics.riken@gmail.com" size="50"/>
+    <label>DNS:</label><input type="text" id="DNS_txt_NNN" onchange="update_vars_NNN()" value="" size="50" /><br>
+    <label>Mail:</label><input type="text" id="MAIL_txt_NNN" onchange="update_vars_NNN()" value="kportal.aics.riken@gmail.com" size="50"/>
     </div>
     <input type=hidden id="command_NNN" value="NNN" />
     <input type=hidden id="args_NNN" value="" />
-    <button class="hidden_button" id="exec_button_NNN" onclick="update_vars();exec(NNN)">exec</button>
+    <button class="hidden_button" id="exec_button_NNN" onclick="update_vars_NNN();exec(NNN)">exec</button>
 </div>
 <script>
-    var i = 1;
     var JSONobj = {};
-    function init_block() {
-        console.log("init_block called with i="+i);
+    function init_block_NNN() {
+        console.log("init_block called with i=NNN");
         $("#exec_button_NNN").attr('class', 'active_button');
         $("#DNS_txt_NNN").val(window.location.hostname);
         $('#use_self_signed').click(function() {
@@ -21,16 +20,16 @@
         });
     }
 
-    // Send data in JSON format, prepended with "COMMAND$"
-    function update_vars() {
+    // Send data in JSON format
+    function update_vars_NNN() {
       if (document.getElementById('use_self_signed').checked) {
         JSONobj["KP_SELF_CERT"] = 1;
-      } else {        
+      } else {
         JSONobj["KP_WEB_DNS"] = $("#DNS_txt_NNN").val();
         JSONobj["KP_WEB_MAIL"] = $("#MAIL_txt_NNN").val();
       }
       $("#args_NNN").val(JSON.stringify(JSONobj));
       console.log("Next command args: "+ $("#args_NNN").val());
     }
-init_block();
+init_block_NNN();
 </script>
